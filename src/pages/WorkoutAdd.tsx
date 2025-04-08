@@ -13,13 +13,22 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { Database } from '@/integrations/supabase/types';
 
+// Create a form state type that uses strings for input fields
+interface WorkoutFormState {
+  name: string;
+  type: string;
+  duration: string;
+  calories: string;
+  notes: string;
+}
+
 type WorkoutInsert = Database['public']['Tables']['workouts']['Insert'];
 
 const WorkoutAdd = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [workout, setWorkout] = useState<Omit<WorkoutInsert, 'user_id' | 'date'>>({
+  const [workout, setWorkout] = useState<WorkoutFormState>({
     name: '',
     type: '',
     duration: '',
@@ -27,7 +36,7 @@ const WorkoutAdd = () => {
     notes: ''
   });
 
-  const handleChange = (field: keyof typeof workout, value: string) => {
+  const handleChange = (field: keyof WorkoutFormState, value: string) => {
     setWorkout(prev => ({ ...prev, [field]: value }));
   };
 
@@ -47,12 +56,13 @@ const WorkoutAdd = () => {
         return;
       }
 
+      // Convert string values to appropriate types for database insert
       const { error } = await supabase.from('workouts').insert({
         user_id: session.session.user.id,
         name: workout.name,
         type: workout.type,
-        duration: parseInt(workout.duration as string),
-        calories: workout.calories ? parseInt(workout.calories as string) : null,
+        duration: parseInt(workout.duration),
+        calories: workout.calories ? parseInt(workout.calories) : null,
         notes: workout.notes
       });
 
