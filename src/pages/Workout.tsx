@@ -9,11 +9,14 @@ import { Dumbbell, ArrowLeft, Plus, Calendar, Clock, Flame, Trash2 } from 'lucid
 import BottomNavbar from '@/components/BottomNavbar';
 import { format } from 'date-fns';
 import { toast as sonnerToast } from 'sonner';
+import { Database } from '@/integrations/supabase/types';
+
+type Workout = Database['public']['Tables']['workouts']['Row'];
 
 const Workout = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [workouts, setWorkouts] = useState([]);
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Fetch workouts on component mount
@@ -54,7 +57,7 @@ const Workout = () => {
     fetchWorkouts();
   }, [navigate, toast]);
 
-  const handleDelete = async (id) => {
+  const handleDelete = async (id: string) => {
     try {
       const { error } = await supabase
         .from('workouts')
@@ -139,7 +142,12 @@ const Workout = () => {
   );
 };
 
-const WorkoutCard = ({ workout, onDelete }) => {
+interface WorkoutCardProps {
+  workout: Workout;
+  onDelete: () => void;
+}
+
+const WorkoutCard = ({ workout, onDelete }: WorkoutCardProps) => {
   const workoutTypeColors = {
     cardio: "bg-blue-100 text-blue-800",
     strength: "bg-red-100 text-red-800",
@@ -148,7 +156,7 @@ const WorkoutCard = ({ workout, onDelete }) => {
     other: "bg-purple-100 text-purple-800",
   };
 
-  const typeColor = workoutTypeColors[workout.type] || workoutTypeColors.other;
+  const typeColor = workoutTypeColors[workout.type as keyof typeof workoutTypeColors] || workoutTypeColors.other;
 
   return (
     <Card>

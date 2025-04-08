@@ -11,12 +11,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
+import { Database } from '@/integrations/supabase/types';
+
+type WorkoutInsert = Database['public']['Tables']['workouts']['Insert'];
 
 const WorkoutAdd = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [workout, setWorkout] = useState({
+  const [workout, setWorkout] = useState<Omit<WorkoutInsert, 'user_id' | 'date'>>({
     name: '',
     type: '',
     duration: '',
@@ -24,11 +27,11 @@ const WorkoutAdd = () => {
     notes: ''
   });
 
-  const handleChange = (field, value) => {
+  const handleChange = (field: keyof typeof workout, value: string) => {
     setWorkout(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
@@ -48,8 +51,8 @@ const WorkoutAdd = () => {
         user_id: session.session.user.id,
         name: workout.name,
         type: workout.type,
-        duration: parseInt(workout.duration),
-        calories: workout.calories ? parseInt(workout.calories) : null,
+        duration: parseInt(workout.duration as string),
+        calories: workout.calories ? parseInt(workout.calories as string) : null,
         notes: workout.notes
       });
 
@@ -60,7 +63,7 @@ const WorkoutAdd = () => {
         description: "Your workout has been logged.",
       });
       navigate('/workout');
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
