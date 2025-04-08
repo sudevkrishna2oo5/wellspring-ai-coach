@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { ArrowLeft } from 'lucide-react';
+import { toast } from 'sonner';
 
 const WorkoutAdd = () => {
   const navigate = useNavigate();
@@ -32,7 +33,28 @@ const WorkoutAdd = () => {
     setLoading(true);
 
     try {
-      // Will implement Supabase insertion when we set up the schema
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        toast({
+          title: "Authentication required",
+          description: "Please login to save workouts",
+          variant: "destructive",
+        });
+        navigate('/auth');
+        return;
+      }
+
+      const { error } = await supabase.from('workouts').insert({
+        user_id: session.session.user.id,
+        name: workout.name,
+        type: workout.type,
+        duration: parseInt(workout.duration),
+        calories: workout.calories ? parseInt(workout.calories) : null,
+        notes: workout.notes
+      });
+
+      if (error) throw error;
+      
       toast({
         title: "Success!",
         description: "Your workout has been logged.",
@@ -80,6 +102,7 @@ const WorkoutAdd = () => {
                 <Label htmlFor="type">Type</Label>
                 <Select 
                   onValueChange={(value) => handleChange('type', value)}
+                  required
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select workout type" />
