@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -69,7 +70,7 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const { error } = await (supabase
+      const { error } = await supabase
         .from('email_settings' as any)
         .update({
           daily_motivation: emailSettings.daily_motivation,
@@ -77,7 +78,7 @@ export function ProfileSettings() {
           goal_reminders: emailSettings.goal_reminders,
           special_offers: emailSettings.special_offers
         } as any)
-        .eq('id', session.session.user.id));
+        .eq('id', session.session.user.id);
         
       if (error) throw error;
       
@@ -103,7 +104,7 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const { error } = await (supabase
+      const { error } = await supabase
         .from('app_preferences' as any)
         .update({
           theme: appSettings.theme,
@@ -111,7 +112,7 @@ export function ProfileSettings() {
           language: appSettings.language,
           display_units: appSettings.display_units
         } as any)
-        .eq('id', session.session.user.id));
+        .eq('id', session.session.user.id);
         
       if (error) throw error;
       
@@ -137,12 +138,12 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const { error } = await (supabase
+      const { error } = await supabase
         .from('security_settings' as any)
         .update({
           two_factor_enabled: securitySettings.two_factor_enabled
         } as any)
-        .eq('id', session.session.user.id));
+        .eq('id', session.session.user.id);
         
       if (error) throw error;
       
@@ -167,16 +168,18 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const emailResponse = await (supabase
+      // Fetch email settings
+      const emailResponse = await supabase
         .from('email_settings' as any)
         .select('*')
         .eq('id', session.session.user.id)
-        .single());
+        .single();
         
       if (emailResponse.error) {
         console.error('Error fetching email settings:', emailResponse.error);
       } else if (emailResponse.data) {
-        const emailData = emailResponse.data as EmailSettings;
+        // Use type assertion with unknown as intermediate step
+        const emailData = emailResponse.data as unknown as EmailSettings;
         setEmailSettings({
           id: emailData.id || '',
           daily_motivation: emailData.daily_motivation !== null ? emailData.daily_motivation : true,
@@ -186,16 +189,18 @@ export function ProfileSettings() {
         });
       }
       
-      const appResponse = await (supabase
+      // Fetch app preferences
+      const appResponse = await supabase
         .from('app_preferences' as any)
         .select('*')
         .eq('id', session.session.user.id)
-        .single());
+        .single();
         
       if (appResponse.error) {
         console.error('Error fetching app preferences:', appResponse.error);
       } else if (appResponse.data) {
-        const appData = appResponse.data as AppPreferences;
+        // Use type assertion with unknown as intermediate step
+        const appData = appResponse.data as unknown as AppPreferences;
         setAppSettings({
           id: appData.id || '',
           theme: appData.theme || 'system',
@@ -205,16 +210,18 @@ export function ProfileSettings() {
         });
       }
       
-      const securityResponse = await (supabase
+      // Fetch security settings
+      const securityResponse = await supabase
         .from('security_settings' as any)
         .select('*')
         .eq('id', session.session.user.id)
-        .single());
+        .single();
         
       if (securityResponse.error) {
         console.error('Error fetching security settings:', securityResponse.error);
       } else if (securityResponse.data) {
-        const securityData = securityResponse.data as SecuritySettings;
+        // Use type assertion with unknown as intermediate step
+        const securityData = securityResponse.data as unknown as SecuritySettings;
         setSecuritySettings({
           id: securityData.id || '',
           two_factor_enabled: securityData.two_factor_enabled !== null ? securityData.two_factor_enabled : false,
