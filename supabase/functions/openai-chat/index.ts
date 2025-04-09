@@ -38,6 +38,9 @@ serve(async (req) => {
       );
     }
 
+    // Log the key format (not the actual key) for debugging
+    console.log("API Key format check:", openAiKey ? `Key length: ${openAiKey.length}, starts with: ${openAiKey.substring(0, 3)}...` : "Key not set");
+
     // Determine user intent (workout, nutrition, meditation, etc.)
     let intent = "general";
     const lowercaseMsg = message.toLowerCase();
@@ -70,7 +73,7 @@ serve(async (req) => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${openAiKey}`
+          "Authorization": `Bearer ${openAiKey.trim()}` // Trim whitespace from API key
         },
         body: JSON.stringify({
           model: "gpt-4o-mini",
@@ -95,7 +98,7 @@ serve(async (req) => {
       if (!response.ok) {
         const errorData = await response.json();
         console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || JSON.stringify(errorData)}`);
       }
 
       const openAiData = await response.json();
