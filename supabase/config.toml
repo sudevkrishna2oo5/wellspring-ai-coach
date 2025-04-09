@@ -70,3 +70,16 @@ backend = "postgres"
 
 [experimental.functions]
 enabled = true
+
+# Configure our new edge functions
+[functions.openai-chat]
+verify_jwt = true
+
+[functions.send-emails]
+verify_jwt = true
+
+[functions.daily-motivation]
+verify_jwt = true
+
+[functions.send-notifications]
+verify_jwt = true

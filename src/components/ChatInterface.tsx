@@ -6,9 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Send, Trash2, Bot, User, X } from 'lucide-react';
+import { ChevronLeft, Send, Trash2, Bot, User, X, Clock, RefreshCcw } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
 import { Tables } from '@/integrations/supabase/types';
+import { motion } from 'framer-motion';
 
 type ChatHistory = {
   id: string;
@@ -24,6 +25,7 @@ const ChatInterface = () => {
   const [loading, setLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
   const [userSession, setUserSession] = useState<any>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const endOfMessagesRef = useRef<HTMLDivElement>(null);
   
   const navigate = useNavigate();
@@ -86,101 +88,51 @@ const ChatInterface = () => {
     const userMessage = input.trim();
     setInput('');
     setLoading(true);
+    setErrorMessage(null);
     
     // Add user message to chat
+    const messageId = crypto.randomUUID();
     setMessages(prev => [...prev, {
-      id: crypto.randomUUID(),
+      id: messageId,
       message: userMessage,
       response: '',
       created_at: new Date().toISOString(),
     }]);
     
     try {
-      // Determine user intent (workout, nutrition, meditation, etc.)
-      let intent = "general";
-      const lowercaseMsg = userMessage.toLowerCase();
+      // Call the OpenAI Edge Function
+      const response = await fetch(`https://rfhkokggjvuvvfhlzomb.functions.supabase.co/openai-chat`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`
+        },
+        body: JSON.stringify({
+          message: userMessage,
+          userId: userSession.user.id
+        })
+      });
       
-      if (lowercaseMsg.includes('workout') || lowercaseMsg.includes('exercise') || lowercaseMsg.includes('training')) {
-        intent = "workout";
-      } else if (lowercaseMsg.includes('food') || lowercaseMsg.includes('meal') || lowercaseMsg.includes('diet') || lowercaseMsg.includes('nutrition')) {
-        intent = "nutrition";
-      } else if (lowercaseMsg.includes('sleep') || lowercaseMsg.includes('meditat') || lowercaseMsg.includes('stress') || lowercaseMsg.includes('mind')) {
-        intent = "wellness";
-      } else if (lowercaseMsg.includes('goal') || lowercaseMsg.includes('progress') || lowercaseMsg.includes('weight')) {
-        intent = "progress";
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to get response from AI');
       }
-      
-      // Generate a contextual response (in a real app, this would call an AI API)
-      const responseMap: Record<string, string[]> = {
-        workout: [
-          "Based on your fitness level, I recommend starting with 3 workout sessions per week.",
-          "Remember to include both strength training and cardio in your routine.",
-          "Don't forget to warm up before your workout and cool down after.",
-          "For weight loss, combining cardio and strength training is most effective.",
-          "Consider adding yoga or pilates to improve your flexibility and core strength."
-        ],
-        nutrition: [
-          "Aim to eat protein with every meal to support muscle recovery.",
-          "Remember to stay hydrated! Aim for at least 8 glasses of water per day.",
-          "Consider meal prepping on weekends to make healthy eating easier during the week.",
-          "Try to include vegetables in at least two meals per day.",
-          "Healthy fats from sources like avocados and nuts are important for hormonal balance."
-        ],
-        wellness: [
-          "Even just 5 minutes of meditation daily can help reduce stress levels.",
-          "Try to establish a consistent sleep schedule, even on weekends.",
-          "Deep breathing exercises can help calm your nervous system when you're feeling stressed.",
-          "Consider doing a digital detox before bedtime to improve sleep quality.",
-          "Morning sunlight exposure can help regulate your circadian rhythm."
-        ],
-        progress: [
-          "Remember that sustainable progress takes time. Be patient with yourself.",
-          "Taking progress photos can sometimes be more motivating than just tracking weight.",
-          "Small, consistent improvements lead to remarkable long-term results.",
-          "It's normal for progress to be non-linear. Focus on the overall trend.",
-          "Consider tracking multiple metrics beyond weight, such as energy levels and mood."
-        ],
-        general: [
-          "Consistency is key to achieving your wellness goals.",
-          "Remember to celebrate small victories along your health journey.",
-          "Balance is important - allow yourself rest days and occasional treats.",
-          "Setting specific, measurable goals can help keep you motivated.",
-          "The FitVibe app can help you track all aspects of your wellness journey."
-        ]
-      };
-      
-      // Select a random response from the appropriate category
-      const responses = responseMap[intent] || responseMap.general;
-      const botResponse = responses[Math.floor(Math.random() * responses.length)];
-      
-      // Simulate network delay for a more realistic experience
-      await new Promise(resolve => setTimeout(resolve, 1500));
       
       // Update messages with bot response
       setMessages(prev => 
         prev.map(msg => 
-          msg.id === prev[prev.length - 1].id 
-            ? { ...msg, response: botResponse, intent } 
+          msg.id === messageId
+            ? { ...msg, response: data.response, intent: data.intent } 
             : msg
         )
       );
-      
-      // Store chat in database
-      const { error } = await supabase
-        .from('chatbot_history')
-        .insert([{
-          user_id: userSession.user.id,
-          message: userMessage,
-          response: botResponse,
-          intent: intent
-        }]);
-      
-      if (error) throw error;
       
       // Refresh chat history
       fetchChatHistory(userSession.user.id);
       
     } catch (error: any) {
+      setErrorMessage(error.message);
       toast({
         title: "Error",
         description: "Failed to process your message. Please try again.",
@@ -219,9 +171,25 @@ const ChatInterface = () => {
     }
   };
 
+  const retryMessageHandler = () => {
+    if (errorMessage && messages.length > 0) {
+      // Get the last message and retry it
+      const lastMessage = messages[messages.length - 1];
+      setInput(lastMessage.message);
+      // Remove the last message from the list
+      setMessages(messages.slice(0, messages.length - 1));
+      setErrorMessage(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-dark/5 via-background to-indigo-dark/5 pb-16 overflow-hidden">
-      <header className="py-4 px-6 flex items-center bg-gradient-to-r from-violet-dark to-indigo-dark text-white">
+      <motion.header 
+        className="py-4 px-6 flex items-center bg-gradient-to-r from-violet-dark to-indigo-dark text-white"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
         <Button 
           variant="ghost" 
           className="mr-2 text-white hover:bg-white/10" 
@@ -233,10 +201,15 @@ const ChatInterface = () => {
           <Bot className="mr-2 h-6 w-6" /> 
           FitVibe Assistant
         </h1>
-      </header>
+      </motion.header>
       
       <main className="container mx-auto max-w-3xl px-4 pt-4 pb-24 flex flex-col h-[calc(100vh-120px)]">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-grow">
+        <motion.div 
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 flex-grow"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
           {/* Chat interface */}
           <div className="md:col-span-2 flex flex-col h-full">
             <Card className="flex-grow shadow-lg overflow-hidden gradient-card border-violet-light/20 flex flex-col">
@@ -258,14 +231,25 @@ const ChatInterface = () => {
               
               <div className="flex-grow overflow-y-auto p-4 space-y-4">
                 {messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                  <motion.div 
+                    className="flex flex-col items-center justify-center h-full text-center text-muted-foreground"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.2 }}
+                  >
                     <Bot className="h-12 w-12 mb-3 opacity-50" />
                     <h3 className="font-medium text-lg">How can I help you today?</h3>
                     <p className="max-w-sm mt-2">Ask me about workouts, nutrition, sleep, meditation, or track your progress!</p>
-                  </div>
+                  </motion.div>
                 ) : (
                   messages.map((msg, index) => (
-                    <div key={msg.id} className="space-y-3">
+                    <motion.div 
+                      key={msg.id} 
+                      className="space-y-3"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                    >
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-full bg-violet-DEFAULT/20 flex items-center justify-center">
                           <User className="h-4 w-4 text-violet-DEFAULT" />
@@ -286,7 +270,7 @@ const ChatInterface = () => {
                         </div>
                       )}
                       
-                      {index === messages.length - 1 && !msg.response && (
+                      {index === messages.length - 1 && !msg.response && !errorMessage && (
                         <div className="flex items-start gap-3">
                           <div className="w-8 h-8 rounded-full bg-indigo-DEFAULT/20 flex items-center justify-center">
                             <Bot className="h-4 w-4 text-indigo-DEFAULT" />
@@ -300,7 +284,26 @@ const ChatInterface = () => {
                           </div>
                         </div>
                       )}
-                    </div>
+                      
+                      {index === messages.length - 1 && errorMessage && (
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
+                            <X className="h-4 w-4 text-destructive" />
+                          </div>
+                          <div className="bg-destructive/10 rounded-lg p-3 flex-grow">
+                            <p className="text-destructive">Sorry, I encountered an error. Please try again.</p>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              className="mt-2 text-xs" 
+                              onClick={retryMessageHandler}
+                            >
+                              <RefreshCcw className="h-3 w-3 mr-1" /> Retry
+                            </Button>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
                   ))
                 )}
                 <div ref={endOfMessagesRef} />
@@ -331,7 +334,10 @@ const ChatInterface = () => {
           <div className="hidden md:block">
             <Card className="shadow-lg gradient-card border-indigo-light/20 h-full flex flex-col">
               <div className="p-4 border-b">
-                <h2 className="font-semibold">Chat History</h2>
+                <h2 className="font-semibold flex items-center">
+                  <Clock className="mr-2 h-4 w-4 text-indigo-DEFAULT" />
+                  Chat History
+                </h2>
               </div>
               <div className="flex-grow overflow-y-auto p-2">
                 {chatHistory.length === 0 ? (
@@ -341,9 +347,11 @@ const ChatInterface = () => {
                 ) : (
                   <div className="space-y-2">
                     {chatHistory.map((item) => (
-                      <div 
+                      <motion.div 
                         key={item.id} 
                         className="p-3 rounded-md bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors group flex justify-between"
+                        whileHover={{ scale: 1.01 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
                       >
                         <div>
                           <p className="text-sm font-medium truncate">{item.message}</p>
@@ -360,14 +368,14 @@ const ChatInterface = () => {
                         >
                           <X className="h-4 w-4 text-muted-foreground" />
                         </Button>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 )}
               </div>
             </Card>
           </div>
-        </div>
+        </motion.div>
       </main>
       
       <BottomNavbar currentPage="home" />

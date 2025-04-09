@@ -9,6 +9,36 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      app_preferences: {
+        Row: {
+          created_at: string
+          display_units: string | null
+          id: string
+          language: string | null
+          notifications_enabled: boolean | null
+          theme: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_units?: string | null
+          id: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_units?: string | null
+          id?: string
+          language?: string | null
+          notifications_enabled?: boolean | null
+          theme?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       chatbot_history: {
         Row: {
           created_at: string
@@ -82,6 +112,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      email_settings: {
+        Row: {
+          created_at: string
+          daily_motivation: boolean | null
+          goal_reminders: boolean | null
+          id: string
+          special_offers: boolean | null
+          updated_at: string
+          weekly_summary: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          daily_motivation?: boolean | null
+          goal_reminders?: boolean | null
+          id: string
+          special_offers?: boolean | null
+          updated_at?: string
+          weekly_summary?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          daily_motivation?: boolean | null
+          goal_reminders?: boolean | null
+          id?: string
+          special_offers?: boolean | null
+          updated_at?: string
+          weekly_summary?: boolean | null
+        }
+        Relationships: []
       }
       meals: {
         Row: {
@@ -267,6 +327,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_settings: {
+        Row: {
+          created_at: string
+          id: string
+          last_password_change: string | null
+          login_history: Json | null
+          two_factor_enabled: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          last_password_change?: string | null
+          login_history?: Json | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          last_password_change?: string | null
+          login_history?: Json | null
+          two_factor_enabled?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       sleep: {
         Row: {
