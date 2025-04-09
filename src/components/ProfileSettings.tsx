@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
@@ -11,21 +11,54 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { motion } from 'framer-motion';
 import { Bell, Globe, Shield, ArrowRight } from 'lucide-react';
 
+// Define types for our custom tables that aren't in the generated types yet
+interface EmailSettings {
+  id: string;
+  daily_motivation: boolean;
+  weekly_summary: boolean;
+  goal_reminders: boolean;
+  special_offers: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface AppPreferences {
+  id: string;
+  theme: string;
+  notifications_enabled: boolean;
+  language: string;
+  display_units: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface SecuritySettings {
+  id: string;
+  two_factor_enabled: boolean;
+  login_history?: any;
+  last_password_change?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export function ProfileSettings() {
   const [loading, setLoading] = useState(false);
-  const [emailSettings, setEmailSettings] = useState({
+  const [emailSettings, setEmailSettings] = useState<EmailSettings>({
+    id: '',
     daily_motivation: true,
     weekly_summary: true,
     goal_reminders: true,
     special_offers: false
   });
-  const [appSettings, setAppSettings] = useState({
+  const [appSettings, setAppSettings] = useState<AppPreferences>({
+    id: '',
     theme: 'system',
     notifications_enabled: true,
     language: 'en',
     display_units: 'metric'
   });
-  const [securitySettings, setSecuritySettings] = useState({
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
+    id: '',
     two_factor_enabled: false
   });
   
@@ -38,8 +71,13 @@ export function ProfileSettings() {
       if (!session.session) return;
       
       const { error } = await supabase
-        .from('email_settings')
-        .update(emailSettings)
+        .from('email_settings' as any)
+        .update({
+          daily_motivation: emailSettings.daily_motivation,
+          weekly_summary: emailSettings.weekly_summary,
+          goal_reminders: emailSettings.goal_reminders,
+          special_offers: emailSettings.special_offers
+        } as any)
         .eq('id', session.session.user.id);
         
       if (error) throw error;
@@ -54,6 +92,7 @@ export function ProfileSettings() {
         description: "Failed to update email settings",
         variant: "destructive",
       });
+      console.error('Error updating email settings:', error);
     } finally {
       setLoading(false);
     }
@@ -66,8 +105,13 @@ export function ProfileSettings() {
       if (!session.session) return;
       
       const { error } = await supabase
-        .from('app_preferences')
-        .update(appSettings)
+        .from('app_preferences' as any)
+        .update({
+          theme: appSettings.theme,
+          notifications_enabled: appSettings.notifications_enabled,
+          language: appSettings.language,
+          display_units: appSettings.display_units
+        } as any)
         .eq('id', session.session.user.id);
         
       if (error) throw error;
@@ -82,6 +126,7 @@ export function ProfileSettings() {
         description: "Failed to update app preferences",
         variant: "destructive",
       });
+      console.error('Error updating app preferences:', error);
     } finally {
       setLoading(false);
     }
@@ -94,8 +139,10 @@ export function ProfileSettings() {
       if (!session.session) return;
       
       const { error } = await supabase
-        .from('security_settings')
-        .update(securitySettings)
+        .from('security_settings' as any)
+        .update({
+          two_factor_enabled: securitySettings.two_factor_enabled
+        } as any)
         .eq('id', session.session.user.id);
         
       if (error) throw error;
@@ -110,6 +157,7 @@ export function ProfileSettings() {
         description: "Failed to update security settings",
         variant: "destructive",
       });
+      console.error('Error updating security settings:', error);
     } finally {
       setLoading(false);
     }
@@ -121,14 +169,17 @@ export function ProfileSettings() {
       if (!session.session) return;
       
       // Fetch email settings
-      const { data: emailData } = await supabase
-        .from('email_settings')
+      const { data: emailData, error: emailError } = await supabase
+        .from('email_settings' as any)
         .select('*')
         .eq('id', session.session.user.id)
         .single();
         
-      if (emailData) {
+      if (emailError) {
+        console.error('Error fetching email settings:', emailError);
+      } else if (emailData) {
         setEmailSettings({
+          id: emailData.id,
           daily_motivation: emailData.daily_motivation,
           weekly_summary: emailData.weekly_summary,
           goal_reminders: emailData.goal_reminders,
@@ -137,14 +188,17 @@ export function ProfileSettings() {
       }
       
       // Fetch app preferences
-      const { data: appData } = await supabase
-        .from('app_preferences')
+      const { data: appData, error: appError } = await supabase
+        .from('app_preferences' as any)
         .select('*')
         .eq('id', session.session.user.id)
         .single();
         
-      if (appData) {
+      if (appError) {
+        console.error('Error fetching app preferences:', appError);
+      } else if (appData) {
         setAppSettings({
+          id: appData.id,
           theme: appData.theme,
           notifications_enabled: appData.notifications_enabled,
           language: appData.language,
@@ -153,26 +207,36 @@ export function ProfileSettings() {
       }
       
       // Fetch security settings
-      const { data: securityData } = await supabase
-        .from('security_settings')
+      const { data: securityData, error: securityError } = await supabase
+        .from('security_settings' as any)
         .select('*')
         .eq('id', session.session.user.id)
         .single();
         
-      if (securityData) {
+      if (securityError) {
+        console.error('Error fetching security settings:', securityError);
+      } else if (securityData) {
         setSecuritySettings({
-          two_factor_enabled: securityData.two_factor_enabled
+          id: securityData.id,
+          two_factor_enabled: securityData.two_factor_enabled,
+          login_history: securityData.login_history,
+          last_password_change: securityData.last_password_change
         });
       }
     } catch (error) {
       console.error('Error fetching settings:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load settings",
+        variant: "destructive",
+      });
     }
   };
   
   // Fetch settings on component mount
-  useState(() => {
+  useEffect(() => {
     fetchSettings();
-  });
+  }, []);
 
   return (
     <motion.div
