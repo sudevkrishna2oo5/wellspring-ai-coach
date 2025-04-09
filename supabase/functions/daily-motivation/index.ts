@@ -47,22 +47,63 @@ serve(async (req) => {
 
     // Get 5 random motivational quotes
     const selectedQuotes = [];
-    for (let i = 0; i < 5; i++) {
-      const randomIndex = Math.floor(Math.random() * motivationalQuotes.length);
-      selectedQuotes.push(motivationalQuotes[randomIndex]);
+    const quotesToSend = [...motivationalQuotes];
+    for (let i = 0; i < Math.min(5, quotesToSend.length); i++) {
+      const randomIndex = Math.floor(Math.random() * quotesToSend.length);
+      selectedQuotes.push(quotesToSend[randomIndex]);
       // Remove the selected quote to avoid duplicates
-      motivationalQuotes.splice(randomIndex, 1);
+      quotesToSend.splice(randomIndex, 1);
     }
 
-    // In a production environment, you would send actual emails here
-    console.log("Selected motivational quotes for today:", selectedQuotes);
-    console.log(`Would send daily motivation to ${eligibleUsers?.length || 0} users`);
+    // For each eligible user, send the daily motivation email
+    const results = [];
+    for (const user of eligibleUsers || []) {
+      // Call our send-emails function to deliver the motivation email
+      try {
+        const emailResponse = await fetch(`${supabaseUrl}/functions/v1/send-emails`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabaseServiceKey}`
+          },
+          body: JSON.stringify({
+            type: 'daily_motivation',
+            userId: user.id,
+            quotes: selectedQuotes,
+            userName: user.full_name || 'Fitness Enthusiast'
+          })
+        });
+
+        if (!emailResponse.ok) {
+          const errorData = await emailResponse.json();
+          console.error(`Failed to send email to user ${user.id}:`, errorData);
+          results.push({
+            userId: user.id,
+            success: false,
+            error: errorData
+          });
+        } else {
+          results.push({
+            userId: user.id,
+            success: true
+          });
+        }
+      } catch (emailError) {
+        console.error(`Error sending email to user ${user.id}:`, emailError.message);
+        results.push({
+          userId: user.id,
+          success: false,
+          error: emailError.message
+        });
+      }
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         message: `Processed ${eligibleUsers?.length || 0} daily motivation notifications`,
-        quotes: selectedQuotes
+        quotes: selectedQuotes,
+        results
       }),
       { 
         headers: { 

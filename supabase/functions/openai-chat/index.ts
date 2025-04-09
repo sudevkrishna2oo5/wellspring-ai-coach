@@ -29,6 +29,15 @@ serve(async (req) => {
       );
     }
 
+    // Validate OpenAI key is set
+    if (!openAiKey) {
+      console.error("OpenAI API key is not configured");
+      return new Response(
+        JSON.stringify({ error: 'OpenAI API key is not configured' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Determine user intent (workout, nutrition, meditation, etc.)
     let intent = "general";
     const lowercaseMsg = message.toLowerCase();
@@ -55,57 +64,77 @@ serve(async (req) => {
       userProfile = profileData;
     }
 
-    // Call OpenAI for AI response
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${openAiKey}`
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system", 
-            content: `You are FitVibe, an AI wellness coach specializing in fitness, nutrition, mental wellness, and health tracking.
-            ${userProfile ? `The user's name is ${userProfile.full_name || 'there'}.` : ''}
-            ${userProfile ? `Their fitness stats: Height: ${userProfile.height || 'unknown'} cm, Weight: ${userProfile.weight || 'unknown'} kg.` : ''}
-            ${userProfile && userProfile.goals ? `Their goals are: ${userProfile.goals.join(', ')}.` : ''}
-            Provide personalized, practical advice. Be encouraging, friendly, and motivational.
-            Keep responses concise (under 150 words) and actionable.
-            Focus on realistic, science-based recommendations.`
-          },
-          { role: "user", content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 300
-      })
-    });
+    try {
+      // Call OpenAI for AI response with improved error handling
+      const response = await fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openAiKey}`
+        },
+        body: JSON.stringify({
+          model: "gpt-3.5-turbo",
+          messages: [
+            {
+              role: "system", 
+              content: `You are FitVibe, an AI wellness coach specializing in fitness, nutrition, mental wellness, and health tracking.
+              ${userProfile ? `The user's name is ${userProfile.full_name || 'there'}.` : ''}
+              ${userProfile ? `Their fitness stats: Height: ${userProfile.height || 'unknown'} cm, Weight: ${userProfile.weight || 'unknown'} kg.` : ''}
+              ${userProfile && userProfile.goals ? `Their goals are: ${userProfile.goals.join(', ')}.` : ''}
+              Provide personalized, practical advice. Be encouraging, friendly, and motivational.
+              Keep responses concise (under 150 words) and actionable.
+              Focus on realistic, science-based recommendations.`
+            },
+            { role: "user", content: message }
+          ],
+          temperature: 0.7,
+          max_tokens: 300
+        })
+      });
 
-    const openAiData = await response.json();
-    const aiResponse = openAiData.choices[0].message.content;
-
-    // Store chat history in the database
-    if (userId) {
-      await supabase
-        .from('chatbot_history')
-        .insert({
-          user_id: userId,
-          message: message,
-          response: aiResponse,
-          intent: intent
-        });
-    }
-
-    return new Response(
-      JSON.stringify({ response: aiResponse, intent }),
-      { 
-        headers: { 
-          ...corsHeaders,
-          'Content-Type': 'application/json' 
-        } 
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("OpenAI API error:", errorData);
+        throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
       }
-    );
+
+      const openAiData = await response.json();
+      const aiResponse = openAiData.choices[0].message.content;
+
+      // Store chat history in the database
+      if (userId) {
+        await supabase
+          .from('chatbot_history')
+          .insert({
+            user_id: userId,
+            message: message,
+            response: aiResponse,
+            intent: intent
+          });
+      }
+
+      return new Response(
+        JSON.stringify({ response: aiResponse, intent }),
+        { 
+          headers: { 
+            ...corsHeaders,
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    } catch (openAIError) {
+      console.error('Error calling OpenAI:', openAIError.message);
+      return new Response(
+        JSON.stringify({ error: `Error calling OpenAI: ${openAIError.message}` }),
+        { 
+          status: 500, 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
   } catch (error) {
     console.error('Error in openai-chat function:', error.message);
     return new Response(

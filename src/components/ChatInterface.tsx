@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,7 +30,6 @@ const ChatInterface = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   
-  // Check for existing session on component mount
   useEffect(() => {
     const getSession = async () => {
       const { data } = await supabase.auth.getSession();
@@ -40,14 +38,12 @@ const ChatInterface = () => {
       if (!data.session) {
         navigate('/auth');
       } else {
-        // Fetch chat history
         fetchChatHistory(data.session.user.id);
       }
     };
     
     getSession();
     
-    // Set up auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUserSession(session);
       if (!session) {
@@ -76,7 +72,6 @@ const ChatInterface = () => {
     }
   };
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
@@ -90,7 +85,6 @@ const ChatInterface = () => {
     setLoading(true);
     setErrorMessage(null);
     
-    // Add user message to chat
     const messageId = crypto.randomUUID();
     setMessages(prev => [...prev, {
       id: messageId,
@@ -100,12 +94,18 @@ const ChatInterface = () => {
     }]);
     
     try {
-      // Call the OpenAI Edge Function
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+      
       const response = await fetch(`https://rfhkokggjvuvvfhlzomb.functions.supabase.co/openai-chat`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           message: userMessage,
@@ -113,13 +113,14 @@ const ChatInterface = () => {
         })
       });
       
-      const data = await response.json();
-      
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to get response from AI');
+        const errorData = await response.json();
+        console.error('Error response from API:', errorData);
+        throw new Error(errorData.error || 'Failed to get response from AI');
       }
       
-      // Update messages with bot response
+      const data = await response.json();
+      
       setMessages(prev => 
         prev.map(msg => 
           msg.id === messageId
@@ -128,17 +129,16 @@ const ChatInterface = () => {
         )
       );
       
-      // Refresh chat history
       fetchChatHistory(userSession.user.id);
       
     } catch (error: any) {
+      console.error('Chat error:', error);
       setErrorMessage(error.message);
       toast({
         title: "Error",
-        description: "Failed to process your message. Please try again.",
+        description: `Failed to process your message: ${error.message}`,
         variant: "destructive",
       });
-      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -172,11 +172,9 @@ const ChatInterface = () => {
   };
 
   const retryMessageHandler = () => {
-    if (errorMessage && messages.length > 0) {
-      // Get the last message and retry it
+    if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       setInput(lastMessage.message);
-      // Remove the last message from the list
       setMessages(messages.slice(0, messages.length - 1));
       setErrorMessage(null);
     }
@@ -210,7 +208,6 @@ const ChatInterface = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          {/* Chat interface */}
           <div className="md:col-span-2 flex flex-col h-full">
             <Card className="flex-grow shadow-lg overflow-hidden gradient-card border-violet-light/20 flex flex-col">
               <div className="p-4 border-b flex justify-between items-center">
@@ -291,7 +288,7 @@ const ChatInterface = () => {
                             <X className="h-4 w-4 text-destructive" />
                           </div>
                           <div className="bg-destructive/10 rounded-lg p-3 flex-grow">
-                            <p className="text-destructive">Sorry, I encountered an error. Please try again.</p>
+                            <p className="text-destructive">{errorMessage || 'Sorry, I encountered an error. Please try again.'}</p>
                             <Button 
                               variant="outline" 
                               size="sm" 
@@ -330,7 +327,6 @@ const ChatInterface = () => {
             </Card>
           </div>
           
-          {/* Chat history */}
           <div className="hidden md:block">
             <Card className="shadow-lg gradient-card border-indigo-light/20 h-full flex flex-col">
               <div className="p-4 border-b">
