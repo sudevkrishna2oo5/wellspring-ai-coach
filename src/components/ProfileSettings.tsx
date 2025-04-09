@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -70,7 +69,7 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('email_settings' as any)
         .update({
           daily_motivation: emailSettings.daily_motivation,
@@ -78,7 +77,7 @@ export function ProfileSettings() {
           goal_reminders: emailSettings.goal_reminders,
           special_offers: emailSettings.special_offers
         } as any)
-        .eq('id', session.session.user.id);
+        .eq('id', session.session.user.id));
         
       if (error) throw error;
       
@@ -104,7 +103,7 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('app_preferences' as any)
         .update({
           theme: appSettings.theme,
@@ -112,7 +111,7 @@ export function ProfileSettings() {
           language: appSettings.language,
           display_units: appSettings.display_units
         } as any)
-        .eq('id', session.session.user.id);
+        .eq('id', session.session.user.id));
         
       if (error) throw error;
       
@@ -138,12 +137,12 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      const { error } = await supabase
+      const { error } = await (supabase
         .from('security_settings' as any)
         .update({
           two_factor_enabled: securitySettings.two_factor_enabled
         } as any)
-        .eq('id', session.session.user.id);
+        .eq('id', session.session.user.id));
         
       if (error) throw error;
       
@@ -168,57 +167,57 @@ export function ProfileSettings() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) return;
       
-      // Fetch email settings
-      const { data: emailData, error: emailError } = await supabase
+      const emailResponse = await (supabase
         .from('email_settings' as any)
         .select('*')
         .eq('id', session.session.user.id)
-        .single();
+        .single());
         
-      if (emailError) {
-        console.error('Error fetching email settings:', emailError);
-      } else if (emailData) {
+      if (emailResponse.error) {
+        console.error('Error fetching email settings:', emailResponse.error);
+      } else if (emailResponse.data) {
+        const emailData = emailResponse.data as EmailSettings;
         setEmailSettings({
-          id: emailData.id,
-          daily_motivation: emailData.daily_motivation,
-          weekly_summary: emailData.weekly_summary,
-          goal_reminders: emailData.goal_reminders,
-          special_offers: emailData.special_offers
+          id: emailData.id || '',
+          daily_motivation: emailData.daily_motivation !== null ? emailData.daily_motivation : true,
+          weekly_summary: emailData.weekly_summary !== null ? emailData.weekly_summary : true,
+          goal_reminders: emailData.goal_reminders !== null ? emailData.goal_reminders : true,
+          special_offers: emailData.special_offers !== null ? emailData.special_offers : false
         });
       }
       
-      // Fetch app preferences
-      const { data: appData, error: appError } = await supabase
+      const appResponse = await (supabase
         .from('app_preferences' as any)
         .select('*')
         .eq('id', session.session.user.id)
-        .single();
+        .single());
         
-      if (appError) {
-        console.error('Error fetching app preferences:', appError);
-      } else if (appData) {
+      if (appResponse.error) {
+        console.error('Error fetching app preferences:', appResponse.error);
+      } else if (appResponse.data) {
+        const appData = appResponse.data as AppPreferences;
         setAppSettings({
-          id: appData.id,
-          theme: appData.theme,
-          notifications_enabled: appData.notifications_enabled,
-          language: appData.language,
-          display_units: appData.display_units
+          id: appData.id || '',
+          theme: appData.theme || 'system',
+          notifications_enabled: appData.notifications_enabled !== null ? appData.notifications_enabled : true,
+          language: appData.language || 'en',
+          display_units: appData.display_units || 'metric'
         });
       }
       
-      // Fetch security settings
-      const { data: securityData, error: securityError } = await supabase
+      const securityResponse = await (supabase
         .from('security_settings' as any)
         .select('*')
         .eq('id', session.session.user.id)
-        .single();
+        .single());
         
-      if (securityError) {
-        console.error('Error fetching security settings:', securityError);
-      } else if (securityData) {
+      if (securityResponse.error) {
+        console.error('Error fetching security settings:', securityResponse.error);
+      } else if (securityResponse.data) {
+        const securityData = securityResponse.data as SecuritySettings;
         setSecuritySettings({
-          id: securityData.id,
-          two_factor_enabled: securityData.two_factor_enabled,
+          id: securityData.id || '',
+          two_factor_enabled: securityData.two_factor_enabled !== null ? securityData.two_factor_enabled : false,
           login_history: securityData.login_history,
           last_password_change: securityData.last_password_change
         });
@@ -233,7 +232,6 @@ export function ProfileSettings() {
     }
   };
   
-  // Fetch settings on component mount
   useEffect(() => {
     fetchSettings();
   }, []);
