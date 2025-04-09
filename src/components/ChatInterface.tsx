@@ -1,32 +1,19 @@
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Bot, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { ChevronLeft, Send, Trash2, Bot, User, X, Clock, RefreshCcw } from 'lucide-react';
-import BottomNavbar from '@/components/BottomNavbar';
-import { Tables } from '@/integrations/supabase/types';
 import { motion } from 'framer-motion';
-
-type ChatHistory = {
-  id: string;
-  message: string;
-  response: string;
-  created_at: string;
-  intent?: string | null;
-};
+import BottomNavbar from '@/components/BottomNavbar';
+import ChatContainer from '@/components/chat/ChatContainer';
+import ChatHistory from '@/components/chat/ChatHistory';
+import { fetchChatHistory, deleteChatHistoryItem, ChatMessage } from '@/services/chatService';
 
 const ChatInterface = () => {
-  const [messages, setMessages] = useState<ChatHistory[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [chatHistory, setChatHistory] = useState<ChatHistory[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
   const [userSession, setUserSession] = useState<any>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const endOfMessagesRef = useRef<HTMLDivElement>(null);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -39,7 +26,7 @@ const ChatInterface = () => {
       if (!data.session) {
         navigate('/auth');
       } else {
-        fetchChatHistory(data.session.user.id);
+        loadChatHistory(data.session.user.id);
       }
     };
     
@@ -57,107 +44,18 @@ const ChatInterface = () => {
     };
   }, [navigate]);
 
-  const fetchChatHistory = async (userId: string) => {
+  const loadChatHistory = async (userId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('chatbot_history')
-        .select('*')
-        .eq('user_id', userId)
-        .order('created_at', { ascending: false })
-        .limit(20);
-        
-      if (error) throw error;
-      setChatHistory(data || []);
+      const history = await fetchChatHistory(userId);
+      setChatHistory(history);
     } catch (error: any) {
       console.error('Error fetching chat history:', error.message);
     }
   };
 
-  useEffect(() => {
-    endOfMessagesRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || loading || !userSession) return;
-    
-    const userMessage = input.trim();
-    setInput('');
-    setLoading(true);
-    setErrorMessage(null);
-    
-    const messageId = crypto.randomUUID();
-    setMessages(prev => [...prev, {
-      id: messageId,
-      message: userMessage,
-      response: '',
-      created_at: new Date().toISOString(),
-    }]);
-    
+  const handleDeleteHistoryItem = async (id: string) => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const token = sessionData.session?.access_token;
-      
-      if (!token) {
-        throw new Error('Authentication required. Please log in again.');
-      }
-      
-      const response = await fetch(`https://rfhkokggjvuvvfhlzomb.functions.supabase.co/openai-chat`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          message: userMessage,
-          userId: userSession.user.id
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Error response from API:', errorData);
-        throw new Error(errorData.error || 'Failed to get response from AI');
-      }
-      
-      const data = await response.json();
-      
-      setMessages(prev => 
-        prev.map(msg => 
-          msg.id === messageId
-            ? { ...msg, response: data.response, intent: data.intent } 
-            : msg
-        )
-      );
-      
-      fetchChatHistory(userSession.user.id);
-      
-    } catch (error: any) {
-      console.error('Chat error:', error);
-      setErrorMessage(error.message);
-      toast({
-        title: "Error",
-        description: `Failed to process your message: ${error.message}`,
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const clearChat = () => {
-    setMessages([]);
-  };
-  
-  const deleteHistoryItem = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('chatbot_history')
-        .delete()
-        .eq('id', id);
-        
-      if (error) throw error;
-      
+      await deleteChatHistoryItem(id);
       setChatHistory(prev => prev.filter(item => item.id !== id));
       toast({
         title: "Deleted",
@@ -169,15 +67,6 @@ const ChatInterface = () => {
         description: "Failed to delete chat history item",
         variant: "destructive",
       });
-    }
-  };
-
-  const retryMessageHandler = () => {
-    if (messages.length > 0) {
-      const lastMessage = messages[messages.length - 1];
-      setInput(lastMessage.message);
-      setMessages(messages.slice(0, messages.length - 1));
-      setErrorMessage(null);
     }
   };
 
@@ -210,172 +99,24 @@ const ChatInterface = () => {
           transition={{ duration: 0.5 }}
         >
           <div className="md:col-span-2 flex flex-col h-full">
-            <Card className="flex-grow shadow-lg overflow-hidden gradient-card border-violet-light/20 flex flex-col">
-              <div className="p-4 border-b flex justify-between items-center">
-                <h2 className="font-semibold flex items-center">
-                  <Bot className="mr-2 h-5 w-5 text-violet-DEFAULT" />
-                  Chat with FitVibe AI
-                </h2>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={clearChat}
-                  className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  disabled={messages.length === 0}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-              
-              <div className="flex-grow overflow-y-auto p-4 space-y-4">
-                {messages.length === 0 ? (
-                  <motion.div 
-                    className="flex flex-col items-center justify-center h-full text-center text-muted-foreground"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.2 }}
-                  >
-                    <Bot className="h-12 w-12 mb-3 opacity-50" />
-                    <h3 className="font-medium text-lg">How can I help you today?</h3>
-                    <p className="max-w-sm mt-2">Ask me about workouts, nutrition, sleep, meditation, or track your progress!</p>
-                  </motion.div>
-                ) : (
-                  messages.map((msg, index) => (
-                    <motion.div 
-                      key={msg.id} 
-                      className="space-y-3"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-violet-DEFAULT/20 flex items-center justify-center">
-                          <User className="h-4 w-4 text-violet-DEFAULT" />
-                        </div>
-                        <div className="bg-muted/50 rounded-lg p-3 flex-grow">
-                          {msg.message}
-                        </div>
-                      </div>
-                      
-                      {msg.response && (
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-DEFAULT/20 flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-indigo-DEFAULT" />
-                          </div>
-                          <div className="bg-violet-DEFAULT/10 rounded-lg p-3 flex-grow">
-                            {msg.response}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {index === messages.length - 1 && !msg.response && !errorMessage && (
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-indigo-DEFAULT/20 flex items-center justify-center">
-                            <Bot className="h-4 w-4 text-indigo-DEFAULT" />
-                          </div>
-                          <div className="bg-violet-DEFAULT/10 rounded-lg p-3 flex-grow">
-                            <div className="flex space-x-2">
-                              <div className="h-2 w-2 rounded-full bg-indigo-DEFAULT animate-pulse"></div>
-                              <div className="h-2 w-2 rounded-full bg-indigo-DEFAULT animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                              <div className="h-2 w-2 rounded-full bg-indigo-DEFAULT animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      
-                      {index === messages.length - 1 && errorMessage && (
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-destructive/20 flex items-center justify-center">
-                            <X className="h-4 w-4 text-destructive" />
-                          </div>
-                          <div className="bg-destructive/10 rounded-lg p-3 flex-grow">
-                            <p className="text-destructive">{errorMessage || 'Sorry, I encountered an error. Please try again.'}</p>
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              className="mt-2 text-xs" 
-                              onClick={retryMessageHandler}
-                            >
-                              <RefreshCcw className="h-3 w-3 mr-1" /> Retry
-                            </Button>
-                          </div>
-                        </div>
-                      )}
-                    </motion.div>
-                  ))
-                )}
-                <div ref={endOfMessagesRef} />
-              </div>
-              
-              <form onSubmit={handleSendMessage} className="border-t p-3">
-                <div className="flex space-x-2">
-                  <Input
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    placeholder="Ask anything about fitness, nutrition, or wellness..."
-                    disabled={loading}
-                    className="flex-grow"
-                  />
-                  <Button 
-                    type="submit" 
-                    disabled={!input.trim() || loading}
-                    className="bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </form>
-            </Card>
+            {userSession && (
+              <ChatContainer 
+                userId={userSession.user.id} 
+                onChatHistoryUpdated={() => loadChatHistory(userSession.user.id)} 
+              />
+            )}
           </div>
           
           <div className="hidden md:block">
-            <Card className="shadow-lg gradient-card border-indigo-light/20 h-full flex flex-col">
-              <div className="p-4 border-b">
-                <h2 className="font-semibold flex items-center">
-                  <Clock className="mr-2 h-4 w-4 text-indigo-DEFAULT" />
-                  Chat History
-                </h2>
-              </div>
-              <div className="flex-grow overflow-y-auto p-2">
-                {chatHistory.length === 0 ? (
-                  <div className="text-center text-muted-foreground py-8 px-4">
-                    <p>No chat history yet</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {chatHistory.map((item) => (
-                      <motion.div 
-                        key={item.id} 
-                        className="p-3 rounded-md bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors group flex justify-between"
-                        whileHover={{ scale: 1.01 }}
-                        transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                      >
-                        <div>
-                          <p className="text-sm font-medium truncate">{item.message}</p>
-                          <span className="text-xs text-muted-foreground capitalize">{item.intent || 'general'}</span>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            deleteHistoryItem(item.id);
-                          }}
-                        >
-                          <X className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </Card>
+            <ChatHistory 
+              chatHistory={chatHistory} 
+              onDeleteHistoryItem={handleDeleteHistoryItem} 
+            />
           </div>
         </motion.div>
       </main>
       
-      <BottomNavbar currentPage="home" />
+      <BottomNavbar currentPage="chat" />
     </div>
   );
 };
