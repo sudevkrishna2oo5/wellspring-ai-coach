@@ -1,24 +1,50 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { Dumbbell, Sparkles, ArrowRight, Mail, Lock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Dumbbell, Sparkles, ArrowRight, Mail, Lock, Phone, ArrowLeft, CheckCircle } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Auth = () => {
+  // State for email/password authentication
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  
+  // State for phone authentication
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otp, setOtp] = useState('');
+  
+  // Shared state
   const [loading, setLoading] = useState(false);
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [isLogin, setIsLogin] = useState(true);
+  
   const navigate = useNavigate();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  const handleSubmit = async (e) => {
+  // Check if user is already authenticated
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      if (data.session) {
+        navigate('/');
+      }
+    };
+    
+    checkSession();
+  }, [navigate]);
+
+  const handleEmailAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
 
@@ -60,6 +86,241 @@ const Auth = () => {
     }
   };
 
+  const handleSendOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      // Format phone number to E.164 format
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: formattedPhone,
+      });
+
+      if (error) throw error;
+      
+      setOtpSent(true);
+      toast({
+        title: "OTP Sent!",
+        description: "A verification code has been sent to your phone.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const formattedPhone = formatPhoneNumber(phoneNumber);
+      
+      const { error } = await supabase.auth.verifyOtp({
+        phone: formattedPhone,
+        token: otp,
+        type: 'sms',
+      });
+
+      if (error) throw error;
+      
+      toast({
+        title: "Success!",
+        description: "Phone verification successful.",
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper function to format phone numbers to E.164 format
+  const formatPhoneNumber = (phone) => {
+    // Remove any non-digit characters
+    const digits = phone.replace(/\D/g, '');
+    
+    // Ensure it has the + prefix
+    if (!digits.startsWith('+')) {
+      // If no country code, assume US (+1)
+      if (digits.length === 10) {
+        return `+1${digits}`;
+      }
+      return `+${digits}`;
+    }
+    
+    return phone;
+  };
+
+  const handleBackToPhoneInput = () => {
+    setOtpSent(false);
+    setOtp('');
+  };
+
+  const renderEmailAuthForm = () => (
+    <form onSubmit={handleEmailAuth}>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <Label htmlFor="email" className="text-sm font-medium">
+            Email
+          </Label>
+          <div className="relative">
+            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="email"
+              type="email"
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="password" className="text-sm font-medium">
+            Password
+          </Label>
+          <div className="relative">
+            <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              id="password"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="pl-10"
+              required
+            />
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="flex flex-col space-y-4">
+        <Button 
+          type="submit" 
+          className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark transition-all duration-300 group"
+          disabled={loading}
+        >
+          {loading ? "Processing..." : (isLogin ? "Sign In" : "Create Account")}
+          <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+        </Button>
+        <Button
+          type="button"
+          variant="link"
+          onClick={() => setIsLogin(!isLogin)}
+          className="w-full"
+        >
+          {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
+        </Button>
+      </CardFooter>
+    </form>
+  );
+
+  const renderPhoneForm = () => (
+    <>
+      {!otpSent ? (
+        <form onSubmit={handleSendOTP}>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="phone" className="text-sm font-medium">
+                Phone Number
+              </Label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+1 (555) 123-4567"
+                  value={phoneNumber}
+                  onChange={(e) => setPhoneNumber(e.target.value)}
+                  className="pl-10"
+                  required
+                />
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Include country code (e.g., +1 for US)
+              </p>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark transition-all duration-300 group"
+              disabled={loading}
+            >
+              {loading ? "Sending..." : "Send Verification Code"}
+              <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </CardFooter>
+        </form>
+      ) : (
+        <form onSubmit={handleVerifyOTP}>
+          <CardContent className="space-y-4">
+            <div className="flex justify-center mb-4">
+              <CheckCircle className="h-12 w-12 text-green-500" />
+            </div>
+            <h3 className="text-center text-lg font-medium">
+              Verification code sent!
+            </h3>
+            <p className="text-center text-sm text-muted-foreground mb-4">
+              We've sent a 6-digit code to {phoneNumber}
+            </p>
+            <div className="space-y-2">
+              <Label htmlFor="otp" className="text-sm font-medium">
+                Enter Verification Code
+              </Label>
+              <div className="flex justify-center">
+                <InputOTP 
+                  maxLength={6}
+                  value={otp}
+                  onChange={setOtp}
+                  render={({ slots }) => (
+                    <InputOTPGroup>
+                      {slots.map((slot, index) => (
+                        <InputOTPSlot key={index} {...slot} index={index} />
+                      ))}
+                    </InputOTPGroup>
+                  )}
+                />
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-4">
+            <Button 
+              type="submit" 
+              className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark transition-all duration-300 group"
+              disabled={loading || otp.length !== 6}
+            >
+              {loading ? "Verifying..." : "Verify & Login"}
+              <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={handleBackToPhoneInput}
+              className="w-full"
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to phone number
+            </Button>
+          </CardFooter>
+        </form>
+      )}
+    </>
+  );
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-violet-dark/10 via-background to-indigo-dark/10">
       <div className="w-full max-w-md">
@@ -99,62 +360,34 @@ const Auth = () => {
                   : "Enter your details to create your FitVibe account"}
               </CardDescription>
             </CardHeader>
-            <form onSubmit={handleSubmit}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm font-medium">
+            
+            <Tabs 
+              defaultValue="email" 
+              value={authMethod}
+              onValueChange={(value) => setAuthMethod(value as 'email' | 'phone')}
+              className="w-full"
+            >
+              <div className="px-6">
+                <TabsList className="grid w-full grid-cols-2 mb-2">
+                  <TabsTrigger value="email" disabled={loading}>
+                    <Mail className="h-4 w-4 mr-2" />
                     Email
-                  </Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="name@example.com"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password" className="text-sm font-medium">
-                    Password
-                  </Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="password"
-                      type="password"
-                      placeholder="••••••••"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="pl-10"
-                      required
-                    />
-                  </div>
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col space-y-4">
-                <Button 
-                  type="submit" 
-                  className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark transition-all duration-300 group"
-                  disabled={loading}
-                >
-                  {loading ? "Processing..." : (isLogin ? "Sign In" : "Create Account")}
-                  <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => setIsLogin(!isLogin)}
-                  className="w-full"
-                >
-                  {isLogin ? "Don't have an account? Sign up" : "Already have an account? Log in"}
-                </Button>
-              </CardFooter>
-            </form>
+                  </TabsTrigger>
+                  <TabsTrigger value="phone" disabled={loading}>
+                    <Phone className="h-4 w-4 mr-2" />
+                    Phone
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <TabsContent value="email" className="pt-0">
+                {renderEmailAuthForm()}
+              </TabsContent>
+              
+              <TabsContent value="phone" className="pt-0">
+                {renderPhoneForm()}
+              </TabsContent>
+            </Tabs>
           </Card>
         </motion.div>
       </div>
