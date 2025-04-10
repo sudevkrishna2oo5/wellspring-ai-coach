@@ -33,12 +33,12 @@ export function useNotifications(userId?: string) {
         .select('*')
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
-        .limit(50);
+        .limit(50) as { data: Notification[] | null; error: any };
       
       if (error) throw error;
       
       if (data) {
-        setNotifications(data as Notification[]);
+        setNotifications(data);
         setUnreadCount(data.filter(n => !n.read).length);
       }
     } catch (error) {
@@ -54,7 +54,7 @@ export function useNotifications(userId?: string) {
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('id', notificationId);
+        .eq('id', notificationId) as { error: any };
       
       if (error) throw error;
       
@@ -79,7 +79,7 @@ export function useNotifications(userId?: string) {
         .from('notifications')
         .update({ read: true })
         .eq('user_id', userId)
-        .eq('read', false);
+        .eq('read', false) as { error: any };
       
       if (error) throw error;
       
@@ -99,7 +99,7 @@ export function useNotifications(userId?: string) {
       const { error } = await supabase
         .from('notifications')
         .delete()
-        .eq('id', notificationId);
+        .eq('id', notificationId) as { error: any };
       
       if (error) throw error;
       
@@ -125,11 +125,19 @@ export function useNotifications(userId?: string) {
     if (!userId) return;
 
     try {
+      // Get the current session token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error('No active session found');
+      }
+
       const response = await fetch(`https://rfhkokggjvuvvfhlzomb.supabase.co/functions/v1/send-notifications`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${supabase.auth.getSession().then(res => res.data.session?.access_token)}`
+          'Authorization': `Bearer ${accessToken}`
         },
         body: JSON.stringify({
           userId,
@@ -155,7 +163,7 @@ export function useNotifications(userId?: string) {
       fetchNotifications();
       
       return result;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error sending notification:', error);
       toast({
         title: 'Error',
