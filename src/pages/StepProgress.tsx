@@ -1,6 +1,6 @@
 
 import { useState } from 'react';
-import { ArrowLeft, Calendar, Flame, Steps, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Calendar, Flame, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { StepTracker } from '@/components/fitness/StepTracker';
@@ -8,6 +8,7 @@ import { StepChart } from '@/components/fitness/StepChart';
 import BottomNavbar from '@/components/BottomNavbar';
 import { Card, CardContent } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import StepsIcon from '@/components/icons/StepsIcon';
 
 export default function StepProgress() {
   const navigate = useNavigate();
@@ -31,7 +32,7 @@ export default function StepProgress() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold text-white flex items-center">
-            <Steps className="h-5 w-5 mr-2" />
+            <StepsIcon className="h-5 w-5 mr-2" />
             Step Tracker
           </h1>
         </div>

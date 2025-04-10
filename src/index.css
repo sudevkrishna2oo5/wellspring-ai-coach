@@ -116,15 +116,15 @@
 
   /* New vibrant gradients */
   .gradient-primary {
-    @apply bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT text-white;
+    @apply bg-gradient-to-r from-violet-500 to-indigo-500 text-white;
   }
   
   .gradient-secondary {
-    @apply bg-gradient-to-r from-teal-DEFAULT to-amber-light text-white;
+    @apply bg-gradient-to-r from-teal-500 to-amber-300 text-white;
   }
   
   .gradient-accent {
-    @apply bg-gradient-to-r from-rose-DEFAULT to-amber-DEFAULT text-white;
+    @apply bg-gradient-to-r from-rose-500 to-amber-500 text-white;
   }
 
   /* Progress bar styles */

@@ -1,10 +1,11 @@
 
 import { useEffect, useState } from "react";
-import { Steps, Activity, Flame, TrendingUp } from "lucide-react";
+import { Activity, Flame, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/hooks/use-toast";
+import StepsIcon from "@/components/icons/StepsIcon";
 
 interface StepTrackerProps {
   dailyGoal?: number;
@@ -58,7 +59,7 @@ export function StepTracker({ dailyGoal = 10000, className }: StepTrackerProps) 
     <Card className={`overflow-hidden ${className}`}>
       <CardHeader className="gradient-primary py-4">
         <CardTitle className="text-white flex items-center gap-2">
-          <Steps className="h-5 w-5" />
+          <StepsIcon className="h-5 w-5" />
           Daily Step Tracker
         </CardTitle>
       </CardHeader>
@@ -112,19 +113,19 @@ export function StepTracker({ dailyGoal = 10000, className }: StepTrackerProps) 
               </div>
 
               <div className="grid grid-cols-2 gap-4 mt-6">
-                <div className="stats-card bg-teal-light/10 dark:bg-teal-dark/20">
+                <div className="stats-card bg-teal-300/10 dark:bg-teal-800/20">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Calories</p>
                       <p className="text-2xl font-semibold">{calories}</p>
                     </div>
-                    <div className="rounded-full p-2 bg-teal-light/20 dark:bg-teal-light/10">
-                      <Flame className="h-4 w-4 text-teal-dark" />
+                    <div className="rounded-full p-2 bg-teal-300/20 dark:bg-teal-300/10">
+                      <Flame className="h-4 w-4 text-teal-800" />
                     </div>
                   </div>
                 </div>
 
-                <div className="stats-card bg-amber-light/10 dark:bg-amber-dark/20">
+                <div className="stats-card bg-amber-300/10 dark:bg-amber-800/20">
                   <div className="flex items-start justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Activity</p>
@@ -136,8 +137,8 @@ export function StepTracker({ dailyGoal = 10000, className }: StepTrackerProps) 
                           : "High"}
                       </p>
                     </div>
-                    <div className="rounded-full p-2 bg-amber-light/20 dark:bg-amber-light/10">
-                      <Activity className="h-4 w-4 text-amber-dark" />
+                    <div className="rounded-full p-2 bg-amber-300/20 dark:bg-amber-300/10">
+                      <Activity className="h-4 w-4 text-amber-800" />
                     </div>
                   </div>
                 </div>

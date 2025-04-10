@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ThemeSwitcher } from '@/components/ThemeSwitcher';
-import { Dumbbell, Utensils, Moon, Brain, BarChart2, User, LogOut, MessageSquare, ArrowRight, AlarmClock, Steps } from 'lucide-react';
+import { Dumbbell, Utensils, Moon, Brain, BarChart2, User, LogOut, MessageSquare, ArrowRight, AlarmClock } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
 import { motion } from 'framer-motion';
 import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
+import StepsIcon from '@/components/icons/StepsIcon';
 
 const Index = () => {
   const [user, setUser] = useState(null);
@@ -263,7 +263,7 @@ const Dashboard = () => {
           <StatCard 
             title="Steps" 
             value="Track now" 
-            icon={<Steps className="h-5 w-5 text-teal-DEFAULT" />}
+            icon={<StepsIcon />}
             onClick={() => navigate('/steps')}
             color="teal"
           />
@@ -333,7 +333,7 @@ const Dashboard = () => {
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/steps')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Steps className="h-5 w-5 text-teal-DEFAULT" />
+                <StepsIcon className="h-5 w-5 text-teal-DEFAULT" />
                 Step Tracker
               </CardTitle>
               <CardDescription>Track your daily steps and activity</CardDescription>
