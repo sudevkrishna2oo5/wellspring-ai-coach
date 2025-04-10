@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft, Calendar, Flame, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,24 @@ import StepsIcon from '@/components/icons/StepsIcon';
 export default function StepProgress() {
   const navigate = useNavigate();
   const [dailyGoal] = useState(10000);
+  const [currentSteps, setCurrentSteps] = useState(0);
+  
+  // Get step count from StepTracker component
+  useEffect(() => {
+    // In a real app, we'd get this from a health API or device sensor
+    // This is a demo that simulates steps increasing over time
+    const interval = setInterval(() => {
+      setCurrentSteps(prev => {
+        const newValue = prev + Math.floor(Math.random() * 10);
+        return newValue > dailyGoal ? dailyGoal : newValue;
+      });
+    }, 3000);
+    
+    return () => clearInterval(interval);
+  }, [dailyGoal]);
+  
+  // Calculate calories burned using the formula Steps × 0.05
+  const caloriesBurned = Math.round(currentSteps * 0.05);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-500/5 via-background to-indigo-500/5 flex flex-col transition-colors duration-300">
@@ -74,7 +92,7 @@ export default function StepProgress() {
                     <Flame className="h-5 w-5 text-rose-500" />
                   </div>
                   <p className="text-sm text-center text-muted-foreground">Calories</p>
-                  <p className="text-lg font-medium">formula</p>
+                  <p className="text-lg font-medium">{caloriesBurned}</p>
                   <p className="text-xs text-muted-foreground">Steps × 0.05</p>
                 </CardContent>
               </Card>

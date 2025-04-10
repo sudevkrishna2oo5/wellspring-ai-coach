@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
-import { ChevronLeft, Plus, Utensils } from 'lucide-react';
+import { ChevronLeft, Plus, Utensils, Bot, Sparkles } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
 import { format } from 'date-fns';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 
 type Meal = Tables<"meals">;
 
@@ -26,6 +28,9 @@ const Meals = () => {
     carbs: '',
     fat: '',
   });
+  const [aiMealDescription, setAiMealDescription] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [showAiDialog, setShowAiDialog] = useState(false);
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -59,12 +64,74 @@ const Meals = () => {
     getMeals();
   }, [navigate, toast]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
       [name]: value
     });
+  };
+
+  const calculateNutritionWithAI = async () => {
+    if (!aiMealDescription.trim()) {
+      toast({
+        title: "Please describe your meal",
+        description: "Enter a meal description to analyze",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setAiLoading(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) {
+        navigate('/auth');
+        return;
+      }
+
+      const response = await fetch(`https://rfhkokggjvuvvfhlzomb.functions.supabase.co/analyze-meal`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.session.access_token}`
+        },
+        body: JSON.stringify({
+          mealDescription: aiMealDescription
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to analyze meal');
+      }
+
+      const nutritionData = await response.json();
+      
+      // Update form with AI-calculated values
+      setFormData({
+        name: aiMealDescription.split('.')[0] || aiMealDescription.substring(0, 30),
+        meal_type: formData.meal_type,
+        calories: String(nutritionData.calories || ''),
+        protein: String(nutritionData.protein || ''),
+        carbs: String(nutritionData.carbs || ''),
+        fat: String(nutritionData.fat || '')
+      });
+
+      setShowAiDialog(false);
+      toast({
+        title: "Nutrition calculated!",
+        description: "Your meal has been analyzed",
+        variant: "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error analyzing meal",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setAiLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -111,6 +178,7 @@ const Meals = () => {
         carbs: '',
         fat: '',
       });
+      setAiMealDescription('');
     } catch (error: any) {
       toast({
         title: "Error adding meal",
@@ -159,9 +227,19 @@ const Meals = () => {
         {showAddForm && (
           <Card className="mb-6 gradient-card border-violet-light/30">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <Utensils className="mr-2 h-5 w-5 text-violet-DEFAULT" />
-                Log a New Meal
+              <CardTitle className="text-lg flex items-center justify-between">
+                <div className="flex items-center">
+                  <Utensils className="mr-2 h-5 w-5 text-violet-DEFAULT" />
+                  Log a New Meal
+                </div>
+                <Button 
+                  variant="outline"
+                  className="flex items-center border-dashed border-violet-DEFAULT/50 text-violet-DEFAULT hover:bg-violet-DEFAULT/10"
+                  onClick={() => setShowAiDialog(true)}
+                >
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  AI Assist
+                </Button>
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -259,6 +337,42 @@ const Meals = () => {
             </CardContent>
           </Card>
         )}
+        
+        <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center">
+                <Bot className="mr-2 h-5 w-5 text-violet-DEFAULT" />
+                AI Meal Assistant
+              </DialogTitle>
+              <DialogDescription>
+                Describe your meal in detail for accurate nutrition calculation
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <Textarea
+                placeholder="E.g., Grilled chicken sandwich with cheese, lettuce, tomato, and mayo on whole wheat bread"
+                className="min-h-32"
+                value={aiMealDescription}
+                onChange={(e) => setAiMealDescription(e.target.value)}
+              />
+              <Button 
+                className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT"
+                onClick={calculateNutritionWithAI}
+                disabled={aiLoading}
+              >
+                {aiLoading ? (
+                  <div className="flex items-center justify-center">
+                    <div className="h-4 w-4 border-2 border-current border-r-transparent rounded-full animate-spin mr-2"></div>
+                    Analyzing...
+                  </div>
+                ) : (
+                  <>Calculate Nutrition <Sparkles className="ml-2 h-4 w-4" /></>
+                )}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
         
         {loading ? (
           <div className="flex justify-center my-10">

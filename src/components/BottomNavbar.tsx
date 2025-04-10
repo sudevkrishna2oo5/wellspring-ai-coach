@@ -1,78 +1,98 @@
 
-import { useNavigate } from 'react-router-dom';
-import { Dumbbell, Home, Utensils, Brain, BarChart2, User, MessageSquare } from 'lucide-react';
-import { motion } from 'framer-motion';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import {
+  Home,
+  Dumbbell,
+  User,
+  Utensils,
+  Brain,
+  BarChart3,
+  Users
+} from "lucide-react";
 
-interface BottomNavbarProps {
-  currentPage: string;
-}
+const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
+  const location = useLocation();
+  const currentPath = location.pathname;
+  
+  const isActive = (path: string) => {
+    return currentPath === path || currentPage === path;
+  };
 
-const BottomNavbar = ({ currentPage }: BottomNavbarProps) => {
-  const navigate = useNavigate();
-  
-  const navItems = [
-    { label: 'Home', icon: <Home className="h-5 w-5" />, path: '/' },
-    { label: 'Workout', icon: <Dumbbell className="h-5 w-5" />, path: '/workout' },
-    { label: 'Meals', icon: <Utensils className="h-5 w-5" />, path: '/meals' },
-    { label: 'Chat', icon: <MessageSquare className="h-5 w-5" />, path: '/chat' },
-    { label: 'Mind', icon: <Brain className="h-5 w-5" />, path: '/mind' },
-    { label: 'Progress', icon: <BarChart2 className="h-5 w-5" />, path: '/progress' },
-    { label: 'Profile', icon: <User className="h-5 w-5" />, path: '/profile' },
-  ];
-  
   return (
-    <motion.div 
-      className="fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-md border-t py-2 px-4 flex justify-between overflow-x-auto"
-      initial={{ y: 100 }}
-      animate={{ y: 0 }}
-      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-    >
-      {navItems.map((item) => (
-        <motion.button
-          key={item.label}
-          className={`flex flex-col items-center p-1 min-w-[3rem] ${
-            currentPage === item.label.toLowerCase() 
-              ? 'text-primary' 
-              : 'text-muted-foreground'
+    <nav className="fixed bottom-0 inset-x-0 h-16 bg-background/80 backdrop-blur-lg border-t border-border z-50">
+      <div className="grid grid-cols-7 h-full max-w-md mx-auto">
+        <Link
+          to="/"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/") ? "text-primary" : "text-muted-foreground"
           }`}
-          onClick={() => navigate(item.path)}
-          whileTap={{ scale: 0.9 }}
-          whileHover={{ y: -2 }}
         >
-          {currentPage === item.label.toLowerCase() ? (
-            <>
-              <motion.div
-                initial={{ scale: 0.8 }}
-                animate={{ scale: 1 }}
-                transition={{ duration: 0.2 }}
-              >
-                {item.icon}
-              </motion.div>
-              <motion.span 
-                className="text-xs mt-1"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.1 }}
-              >
-                {item.label}
-              </motion.span>
-            </>
-          ) : (
-            <>
-              {item.icon}
-              <span className="text-xs mt-1">{item.label}</span>
-            </>
-          )}
-          {currentPage === item.label.toLowerCase() && (
-            <motion.div
-              className="absolute bottom-0 h-1 w-5 rounded-t-full bg-primary"
-              layoutId="underline"
-              transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            />
-          )}
-        </motion.button>
-      ))}
-    </motion.div>
+          <Home className="h-5 w-5" />
+          <span className="text-xs">Home</span>
+        </Link>
+        
+        <Link
+          to="/workout"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/workout") || currentPage === "workout" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Dumbbell className="h-5 w-5" />
+          <span className="text-xs">Workout</span>
+        </Link>
+        
+        <Link
+          to="/meals"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/meals") || currentPage === "meals" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Utensils className="h-5 w-5" />
+          <span className="text-xs">Meals</span>
+        </Link>
+        
+        <Link
+          to="/community"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/community") || currentPage === "community" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Users className="h-5 w-5" />
+          <span className="text-xs">Social</span>
+        </Link>
+        
+        <Link
+          to="/mind"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/mind") || currentPage === "mind" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Brain className="h-5 w-5" />
+          <span className="text-xs">Mind</span>
+        </Link>
+        
+        <Link
+          to="/progress"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/progress") || currentPage === "progress" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <BarChart3 className="h-5 w-5" />
+          <span className="text-xs">Progress</span>
+        </Link>
+        
+        <Link
+          to="/profile"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/profile") || currentPage === "profile" ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <User className="h-5 w-5" />
+          <span className="text-xs">Profile</span>
+        </Link>
+      </div>
+    </nav>
   );
 };
 
