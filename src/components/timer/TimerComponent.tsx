@@ -131,8 +131,7 @@ const TimerComponent = ({
             
             <Progress 
               value={calculateProgress()} 
-              className="w-full mb-6 h-2"
-              indicatorClassName="bg-indigo-DEFAULT"
+              className="w-full mb-6 h-2 bg-secondary"
             />
             
             <div className="flex space-x-2">
