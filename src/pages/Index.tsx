@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Dumbbell, Utensils, Moon, Brain, BarChart2, User, LogOut, MessageSquare, ArrowRight, AlarmClock } from 'lucide-react';
+import { ThemeSwitcher } from '@/components/ThemeSwitcher';
+import { Dumbbell, Utensils, Moon, Brain, BarChart2, User, LogOut, MessageSquare, ArrowRight, AlarmClock, Steps } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
 import { motion } from 'framer-motion';
 import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
@@ -56,54 +58,58 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-dark/5 via-background to-indigo-dark/5 flex flex-col">
+    <div className="min-h-screen bg-gradient-to-br from-violet-dark/5 via-background to-indigo-dark/5 flex flex-col transition-colors duration-300">
       <motion.header 
-        className="py-4 px-6 flex justify-between items-center bg-gradient-to-r from-violet-dark to-indigo-dark text-white"
+        className="py-4 px-6 flex justify-between items-center gradient-primary"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-2xl font-bold flex items-center">
+        <h1 className="text-2xl font-bold flex items-center text-white">
           <div className="w-8 h-8 rounded-full bg-white mr-2 flex items-center justify-center">
             <Dumbbell className="h-5 w-5 text-violet-DEFAULT" />
           </div>
           FitVibe
         </h1>
-        {user ? (
-          <div className="flex gap-2">
-            <Button 
-              variant="ghost" 
-              onClick={() => handleNavigation('/chat')}
-              className="text-white hover:bg-white/10"
-            >
-              <MessageSquare className="h-5 w-5 md:mr-2" />
-              <span className="hidden md:inline">Assistant</span>
-            </Button>
-            <Button 
-              variant="ghost" 
-              onClick={() => handleNavigation('/profile')}
-              className="text-white hover:bg-white/10"
-            >
-              <User className="h-5 w-5 md:mr-2" />
-              <span className="hidden md:inline">Profile</span>
-            </Button>
+        <div className="flex items-center gap-2">
+          <ThemeSwitcher />
+          
+          {user ? (
+            <div className="flex gap-2">
+              <Button 
+                variant="ghost" 
+                onClick={() => handleNavigation('/chat')}
+                className="text-white hover:bg-white/10"
+              >
+                <MessageSquare className="h-5 w-5 md:mr-2" />
+                <span className="hidden md:inline">Assistant</span>
+              </Button>
+              <Button 
+                variant="ghost" 
+                onClick={() => handleNavigation('/profile')}
+                className="text-white hover:bg-white/10"
+              >
+                <User className="h-5 w-5 md:mr-2" />
+                <span className="hidden md:inline">Profile</span>
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleLogout}
+                className="text-white hover:bg-white/10"
+              >
+                <LogOut className="h-5 w-5 md:mr-2" />
+                <span className="hidden md:inline">Logout</span>
+              </Button>
+            </div>
+          ) : (
             <Button
-              variant="ghost"
-              onClick={handleLogout}
-              className="text-white hover:bg-white/10"
+              onClick={() => handleNavigation('/auth')}
+              className="bg-white/10 hover:bg-white/20 text-white"
             >
-              <LogOut className="h-5 w-5 md:mr-2" />
-              <span className="hidden md:inline">Logout</span>
+              Sign In
             </Button>
-          </div>
-        ) : (
-          <Button
-            onClick={() => handleNavigation('/auth')}
-            className="bg-white/10 hover:bg-white/20 text-white"
-          >
-            Sign In
-          </Button>
-        )}
+          )}
+        </div>
       </motion.header>
 
       <main className="flex-1 p-6 pb-16">
@@ -174,7 +180,7 @@ const WelcomeScreen = ({ onGetStarted }) => {
         <Button 
           size="lg" 
           onClick={onGetStarted}
-          className="bg-gradient-to-r from-violet-dark to-indigo-DEFAULT hover:from-violet-DEFAULT hover:to-indigo-dark transition-all duration-300 group"
+          className="bg-gradient-to-r from-violet-dark to-indigo-DEFAULT hover:from-violet-DEFAULT hover:to-indigo-dark transition-all duration-300 group animate-pulse-glow"
         >
           Get Started
           <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
@@ -255,11 +261,11 @@ const Dashboard = () => {
         
         <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
           <StatCard 
-            title="Meditation" 
-            value="0 min" 
-            icon={<Brain className="h-5 w-5 text-purple-500" />}
-            onClick={() => navigate('/mind')}
-            color="purple"
+            title="Steps" 
+            value="Track now" 
+            icon={<Steps className="h-5 w-5 text-teal-DEFAULT" />}
+            onClick={() => navigate('/steps')}
+            color="teal"
           />
         </motion.div>
       </motion.div>
@@ -276,7 +282,7 @@ const Dashboard = () => {
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card 
-            className={`gradient-card border-violet-light/30 ${cardClasses} h-full`} 
+            className={`gradient-card ${cardClasses} h-full`} 
             onClick={() => navigate('/workout')}
           >
             <CardHeader>
@@ -301,7 +307,7 @@ const Dashboard = () => {
           whileHover={{ y: -5 }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <Card className={`gradient-card border-indigo-light/30 ${cardClasses} h-full`} onClick={() => navigate('/chat')}>
+          <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/chat')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <MessageSquare className="h-5 w-5 text-indigo-DEFAULT" />
@@ -324,7 +330,30 @@ const Dashboard = () => {
           whileHover={{ y: -5 }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <Card className={`gradient-card border-blue-500/30 ${cardClasses} h-full`} onClick={() => navigate('/meals')}>
+          <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/steps')}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Steps className="h-5 w-5 text-teal-DEFAULT" />
+                Step Tracker
+              </CardTitle>
+              <CardDescription>Track your daily steps and activity</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Monitor your daily activity and calories burned</p>
+                <Button variant="outline" className="border-teal-DEFAULT/50 text-teal-DEFAULT hover:bg-teal-DEFAULT/10">
+                  View Steps
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div 
+          whileHover={{ y: -5 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+          <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/meals')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Utensils className="h-5 w-5 text-blue-500" />
@@ -347,7 +376,7 @@ const Dashboard = () => {
           whileHover={{ y: -5 }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <Card className={`gradient-card border-purple-500/30 ${cardClasses} h-full`} onClick={() => navigate('/timer')}>
+          <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/timer')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlarmClock className="h-5 w-5 text-purple-500" />
@@ -370,7 +399,7 @@ const Dashboard = () => {
           whileHover={{ y: -5 }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <Card className={`gradient-card border-indigo-light/30 ${cardClasses} h-full`} onClick={() => navigate('/progress')}>
+          <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/progress')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <BarChart2 className="h-5 w-5 text-indigo-DEFAULT" />
@@ -398,6 +427,7 @@ const StatCard = ({ title, value, icon, onClick, color }) => {
     violet: "border-violet-light/30 hover:border-violet-DEFAULT/50",
     indigo: "border-indigo-light/30 hover:border-indigo-DEFAULT/50",
     blue: "border-blue-500/30 hover:border-blue-500/50",
+    teal: "border-teal-light/30 hover:border-teal-DEFAULT/50",
     purple: "border-purple-500/30 hover:border-purple-500/50"
   };
 
