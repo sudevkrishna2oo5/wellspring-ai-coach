@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -58,7 +59,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-dark/5 via-background to-indigo-dark/5 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-violet-500/5 via-background to-indigo-500/5 flex flex-col transition-colors duration-300">
       <motion.header 
         className="py-4 px-6 flex justify-between items-center gradient-primary"
         initial={{ opacity: 0, y: -20 }}
@@ -67,7 +68,7 @@ const Index = () => {
       >
         <h1 className="text-2xl font-bold flex items-center text-white">
           <div className="w-8 h-8 rounded-full bg-white mr-2 flex items-center justify-center">
-            <Dumbbell className="h-5 w-5 text-violet-DEFAULT" />
+            <Dumbbell className="h-5 w-5 text-violet-500" />
           </div>
           FitVibe
         </h1>
@@ -129,7 +130,7 @@ const WelcomeScreen = ({ onGetStarted }) => {
   return (
     <div className="max-w-4xl mx-auto text-center py-12">
       <motion.h1 
-        className="text-4xl font-bold mb-6 bg-gradient-to-r from-violet-dark to-indigo-DEFAULT bg-clip-text text-transparent"
+        className="text-4xl font-bold mb-6 bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -153,13 +154,13 @@ const WelcomeScreen = ({ onGetStarted }) => {
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <FeatureCard 
-          icon={<Dumbbell className="h-10 w-10 text-violet-DEFAULT" />} 
+          icon={<Dumbbell className="h-10 w-10 text-violet-500" />} 
           title="Workout Tracking" 
           description="Log and track your fitness activities" 
           color="violet"
         />
         <FeatureCard 
-          icon={<Utensils className="h-10 w-10 text-indigo-DEFAULT" />} 
+          icon={<Utensils className="h-10 w-10 text-indigo-500" />} 
           title="Nutrition Logging" 
           description="Track meals and monitor macros" 
           color="indigo"
@@ -180,7 +181,7 @@ const WelcomeScreen = ({ onGetStarted }) => {
         <Button 
           size="lg" 
           onClick={onGetStarted}
-          className="bg-gradient-to-r from-violet-dark to-indigo-DEFAULT hover:from-violet-DEFAULT hover:to-indigo-dark transition-all duration-300 group animate-pulse-glow"
+          className="bg-gradient-to-r from-violet-500 to-indigo-500 hover:from-violet-600 hover:to-indigo-600 transition-all duration-300 group animate-pulse-glow"
         >
           Get Started
           <ArrowRight className="ml-2 h-4 w-4 transform group-hover:translate-x-1 transition-transform" />
@@ -192,8 +193,8 @@ const WelcomeScreen = ({ onGetStarted }) => {
 
 const FeatureCard = ({ icon, title, description, color }) => {
   const bgStyles = {
-    violet: "gradient-card border-violet-light/30",
-    indigo: "gradient-card border-indigo-light/30",
+    violet: "gradient-card border-violet-500/30",
+    indigo: "gradient-card border-indigo-500/30",
     blue: "gradient-card border-blue-500/30"
   };
 
@@ -233,7 +234,7 @@ const Dashboard = () => {
           <StatCard 
             title="Today's Workout" 
             value="Not logged" 
-            icon={<Dumbbell className="h-5 w-5 text-violet-DEFAULT" />}
+            icon={<Dumbbell className="h-5 w-5 text-violet-500" />}
             onClick={() => navigate('/workout')}
             color="violet"
           />
@@ -243,7 +244,7 @@ const Dashboard = () => {
           <StatCard 
             title="Today's Meals" 
             value="0 kcal" 
-            icon={<Utensils className="h-5 w-5 text-indigo-DEFAULT" />}
+            icon={<Utensils className="h-5 w-5 text-indigo-500" />}
             onClick={() => navigate('/meals')}
             color="indigo"
           />
@@ -287,7 +288,7 @@ const Dashboard = () => {
           >
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Dumbbell className="h-5 w-5 text-violet-DEFAULT" />
+                <Dumbbell className="h-5 w-5 text-violet-500" />
                 Workout Overview
               </CardTitle>
               <CardDescription>Track your fitness activities</CardDescription>
@@ -295,7 +296,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="flex flex-col items-center justify-center">
                 <p className="text-muted-foreground mb-4">Log your workouts to see progress</p>
-                <Button variant="outline" className="border-violet-DEFAULT/50 text-violet-DEFAULT hover:bg-violet-DEFAULT/10">
+                <Button variant="outline" className="border-violet-500/50 text-violet-500 hover:bg-violet-500/10">
                   Add Workout
                 </Button>
               </div>
@@ -310,7 +311,7 @@ const Dashboard = () => {
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/chat')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-indigo-DEFAULT" />
+                <MessageSquare className="h-5 w-5 text-indigo-500" />
                 AI Assistant
               </CardTitle>
               <CardDescription>Get personalized guidance</CardDescription>
@@ -318,7 +319,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="flex flex-col items-center justify-center">
                 <p className="text-muted-foreground mb-4">Chat with your AI wellness coach</p>
-                <Button variant="outline" className="border-indigo-DEFAULT/50 text-indigo-DEFAULT hover:bg-indigo-DEFAULT/10">
+                <Button variant="outline" className="border-indigo-500/50 text-indigo-500 hover:bg-indigo-500/10">
                   Start Chat
                 </Button>
               </div>
@@ -333,7 +334,7 @@ const Dashboard = () => {
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/steps')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <StepsIcon className="h-5 w-5 text-teal-DEFAULT" />
+                <StepsIcon className="h-5 w-5 text-teal-500" />
                 Step Tracker
               </CardTitle>
               <CardDescription>Track your daily steps and activity</CardDescription>
@@ -341,7 +342,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="flex flex-col items-center justify-center">
                 <p className="text-muted-foreground mb-4">Monitor your daily activity and calories burned</p>
-                <Button variant="outline" className="border-teal-DEFAULT/50 text-teal-DEFAULT hover:bg-teal-DEFAULT/10">
+                <Button variant="outline" className="border-teal-500/50 text-teal-500 hover:bg-teal-500/10">
                   View Steps
                 </Button>
               </div>
@@ -402,7 +403,7 @@ const Dashboard = () => {
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/progress')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <BarChart2 className="h-5 w-5 text-indigo-DEFAULT" />
+                <BarChart2 className="h-5 w-5 text-indigo-500" />
                 Your Progress
               </CardTitle>
               <CardDescription>Visualize your wellness journey</CardDescription>
@@ -410,7 +411,7 @@ const Dashboard = () => {
             <CardContent>
               <div className="flex flex-col items-center justify-center">
                 <p className="text-muted-foreground mb-4">Track metrics to see your progress</p>
-                <Button variant="outline" className="border-indigo-DEFAULT/50 text-indigo-DEFAULT hover:bg-indigo-DEFAULT/10">
+                <Button variant="outline" className="border-indigo-500/50 text-indigo-500 hover:bg-indigo-500/10">
                   View Progress
                 </Button>
               </div>
@@ -424,10 +425,10 @@ const Dashboard = () => {
 
 const StatCard = ({ title, value, icon, onClick, color }) => {
   const colorMap = {
-    violet: "border-violet-light/30 hover:border-violet-DEFAULT/50",
-    indigo: "border-indigo-light/30 hover:border-indigo-DEFAULT/50",
+    violet: "border-violet-500/30 hover:border-violet-500/50",
+    indigo: "border-indigo-500/30 hover:border-indigo-500/50",
     blue: "border-blue-500/30 hover:border-blue-500/50",
-    teal: "border-teal-light/30 hover:border-teal-DEFAULT/50",
+    teal: "border-teal-500/30 hover:border-teal-500/50",
     purple: "border-purple-500/30 hover:border-purple-500/50"
   };
 

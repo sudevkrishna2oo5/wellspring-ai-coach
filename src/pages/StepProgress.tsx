@@ -15,7 +15,7 @@ export default function StepProgress() {
   const [dailyGoal] = useState(10000);
   
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-dark/5 via-background to-indigo-dark/5 flex flex-col transition-colors duration-300">
+    <div className="min-h-screen bg-gradient-to-br from-violet-500/5 via-background to-indigo-500/5 flex flex-col transition-colors duration-300">
       <motion.header 
         className="py-4 px-6 flex justify-between items-center gradient-primary"
         initial={{ opacity: 0, y: -20 }}
@@ -70,8 +70,8 @@ export default function StepProgress() {
             >
               <Card className="gradient-card h-full">
                 <CardContent className="p-4 flex flex-col items-center justify-center">
-                  <div className="rounded-full bg-rose-light/10 p-3 mb-2">
-                    <Flame className="h-5 w-5 text-rose-DEFAULT" />
+                  <div className="rounded-full bg-rose-500/10 p-3 mb-2">
+                    <Flame className="h-5 w-5 text-rose-500" />
                   </div>
                   <p className="text-sm text-center text-muted-foreground">Calories</p>
                   <p className="text-lg font-medium">formula</p>
@@ -86,8 +86,8 @@ export default function StepProgress() {
             >
               <Card className="gradient-card h-full">
                 <CardContent className="p-4 flex flex-col items-center justify-center">
-                  <div className="rounded-full bg-teal-light/10 p-3 mb-2">
-                    <TrendingUp className="h-5 w-5 text-teal-DEFAULT" />
+                  <div className="rounded-full bg-teal-500/10 p-3 mb-2">
+                    <TrendingUp className="h-5 w-5 text-teal-500" />
                   </div>
                   <p className="text-sm text-center text-muted-foreground">Tracking</p>
                   <p className="text-lg font-medium">Auto</p>
