@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -6,9 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Dumbbell, Utensils, Moon, Brain, BarChart2, User, LogOut, MessageSquare, ArrowRight } from 'lucide-react';
+import { Dumbbell, Utensils, Moon, Brain, BarChart2, User, LogOut, MessageSquare, ArrowRight, AlarmClock } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
 import { motion } from 'framer-motion';
+import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
 
 const Index = () => {
   const [user, setUser] = useState(null);
@@ -215,14 +215,7 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-violet-dark to-indigo-DEFAULT bg-clip-text text-transparent">Your Dashboard</h2>
-        <p className="text-muted-foreground">Welcome back! Here's your wellness summary.</p>
-      </motion.div>
+      <WelcomeHeader />
       
       <motion.div 
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
@@ -354,19 +347,19 @@ const Dashboard = () => {
           whileHover={{ y: -5 }}
           transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          <Card className={`gradient-card border-purple-500/30 ${cardClasses} h-full`} onClick={() => navigate('/mind')}>
+          <Card className={`gradient-card border-purple-500/30 ${cardClasses} h-full`} onClick={() => navigate('/timer')}>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Brain className="h-5 w-5 text-purple-500" />
-                Mind & Sleep
+                <AlarmClock className="h-5 w-5 text-purple-500" />
+                Workout Timer
               </CardTitle>
-              <CardDescription>Track meditation and sleep</CardDescription>
+              <CardDescription>Set timers for your workouts</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
-                <p className="text-muted-foreground mb-4">Monitor your mental wellness</p>
+                <p className="text-muted-foreground mb-4">Create custom interval timers</p>
                 <Button variant="outline" className="border-purple-500/50 text-purple-500 hover:bg-purple-500/10">
-                  Log Session
+                  Set Timer
                 </Button>
               </div>
             </CardContent>

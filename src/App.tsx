@@ -13,6 +13,7 @@ import Meals from "./pages/Meals";
 import Mind from "./pages/Mind";
 import Progress from "./pages/Progress";
 import ChatInterface from "./components/ChatInterface";
+import Timer from "./pages/Timer";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -33,6 +34,7 @@ const App = () => (
           <Route path="/progress" element={<Progress />} />
           <Route path="/profile" element={<Profile />} />
           <Route path="/chat" element={<ChatInterface />} />
+          <Route path="/timer" element={<Timer />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -53,6 +53,8 @@ serve(async (req) => {
       intent = "wellness";
     } else if (lowercaseMsg.includes('goal') || lowercaseMsg.includes('progress') || lowercaseMsg.includes('weight')) {
       intent = "progress";
+    } else if (lowercaseMsg.includes('timer') || lowercaseMsg.includes('alarm') || lowercaseMsg.includes('interval')) {
+      intent = "timer";
     }
 
     // Get user profile data to personalize responses if available
@@ -86,7 +88,11 @@ serve(async (req) => {
               ${userProfile && userProfile.goals ? `Their goals are: ${userProfile.goals.join(', ')}.` : ''}
               Provide personalized, practical advice. Be encouraging, friendly, and motivational.
               Keep responses concise (under 150 words) and actionable.
-              Focus on realistic, science-based recommendations.`
+              Focus on realistic, science-based recommendations.
+              
+              If the user asks about setting timers or alarms for workouts, tell them about the timer feature in the app that they can access by going to the Timer page.
+              
+              If the user asks questions about their progress or stats, reference their profile data if available.`
             },
             { role: "user", content: message }
           ],
