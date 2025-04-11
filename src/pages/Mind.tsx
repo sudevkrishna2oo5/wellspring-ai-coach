@@ -9,9 +9,12 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { Tables } from '@/integrations/supabase/types';
-import { ChevronLeft, Brain, Moon, Plus, Timer } from 'lucide-react';
+import { ChevronLeft, Brain, Moon, Plus, Timer, AlarmCheck, Calendar, Clock, AlertTriangle } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
 import { format } from 'date-fns';
+import { SleepSummary } from '@/components/sleep/SleepSummary';
+import { SleepChart } from '@/components/sleep/SleepChart';
+import { getSleepAnalytics, SleepAnalytics } from '@/utils/sleepAnalytics';
 
 type MeditationSession = Tables<"meditation">;
 type SleepRecord = Tables<"sleep">;
@@ -20,8 +23,9 @@ const Mind = () => {
   const [meditationSessions, setMeditationSessions] = useState<MeditationSession[]>([]);
   const [sleepRecords, setSleepRecords] = useState<SleepRecord[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'meditation' | 'sleep'>('meditation');
+  const [activeTab, setActiveTab] = useState<'meditation' | 'sleep'>('sleep');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [sleepAnalytics, setSleepAnalytics] = useState<SleepAnalytics | null>(null);
   
   const [meditationForm, setMeditationForm] = useState({
     duration: '',
@@ -33,6 +37,8 @@ const Mind = () => {
     hours: '',
     quality_rating: '',
     notes: '',
+    bedtime: format(new Date().setHours(22, 0), 'HH:mm'),
+    wakeup: format(new Date().setHours(7, 0), 'HH:mm'),
   });
   
   const navigate = useNavigate();
@@ -62,10 +68,16 @@ const Mind = () => {
           .from('sleep')
           .select('*')
           .order('date', { ascending: false })
-          .limit(10);
+          .limit(30);
         
         if (sleepError) throw sleepError;
         setSleepRecords(sleepData || []);
+
+        // Calculate sleep analytics
+        if (sleepData && sleepData.length > 0) {
+          const analytics = getSleepAnalytics(sleepData);
+          setSleepAnalytics(analytics);
+        }
       } catch (error: any) {
         toast({
           title: "Error fetching data",
@@ -170,12 +182,20 @@ const Mind = () => {
         variant: "default",
       });
       
-      setSleepRecords([data[0], ...sleepRecords]);
+      const updatedRecords = [data[0], ...sleepRecords];
+      setSleepRecords(updatedRecords);
+      
+      // Update analytics with new record
+      const analytics = getSleepAnalytics(updatedRecords);
+      setSleepAnalytics(analytics);
+      
       setShowAddForm(false);
       setSleepForm({
         hours: '',
         quality_rating: '',
         notes: '',
+        bedtime: format(new Date().setHours(22, 0), 'HH:mm'),
+        wakeup: format(new Date().setHours(7, 0), 'HH:mm'),
       });
     } catch (error: any) {
       toast({
@@ -230,6 +250,14 @@ const Mind = () => {
             {showAddForm ? 'Cancel' : <>Add {activeTab === 'meditation' ? 'Session' : 'Record'} <Plus className="ml-2 h-4 w-4" /></>}
           </Button>
         </div>
+
+        {/* Sleep Dashboard */}
+        {activeTab === 'sleep' && !loading && sleepAnalytics && (
+          <div className={`space-y-6 ${showAddForm ? 'mt-6' : ''}`}>
+            <SleepSummary analytics={sleepAnalytics} />
+            <SleepChart sleepRecords={sleepRecords} />
+          </div>
+        )}
         
         {showAddForm && (
           <Card className={`mb-6 gradient-card ${activeTab === 'meditation' ? 'border-violet-light/30' : 'border-indigo-light/30'}`}>
@@ -296,33 +324,61 @@ const Mind = () => {
                 </form>
               ) : (
                 <form onSubmit={handleSleepSubmit} className="space-y-4">
-                  <div>
-                    <Label htmlFor="hours">Hours Slept</Label>
-                    <Input 
-                      id="hours" 
-                      name="hours" 
-                      type="number" 
-                      step="0.5"
-                      required
-                      value={sleepForm.hours} 
-                      onChange={handleSleepChange} 
-                      className="mt-1"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="hours">Hours Slept</Label>
+                      <Input 
+                        id="hours" 
+                        name="hours" 
+                        type="number" 
+                        step="0.5"
+                        required
+                        value={sleepForm.hours} 
+                        onChange={handleSleepChange} 
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="quality_rating">Sleep Quality (1-10)</Label>
+                      <Input 
+                        id="quality_rating" 
+                        name="quality_rating" 
+                        type="number" 
+                        min="1"
+                        max="10"
+                        required
+                        value={sleepForm.quality_rating} 
+                        onChange={handleSleepChange} 
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                   
-                  <div>
-                    <Label htmlFor="quality_rating">Sleep Quality (1-10)</Label>
-                    <Input 
-                      id="quality_rating" 
-                      name="quality_rating" 
-                      type="number" 
-                      min="1"
-                      max="10"
-                      required
-                      value={sleepForm.quality_rating} 
-                      onChange={handleSleepChange} 
-                      className="mt-1"
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="bedtime">Bedtime</Label>
+                      <Input 
+                        id="bedtime" 
+                        name="bedtime" 
+                        type="time"
+                        value={sleepForm.bedtime} 
+                        onChange={handleSleepChange} 
+                        className="mt-1"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="wakeup">Wake-up Time</Label>
+                      <Input 
+                        id="wakeup" 
+                        name="wakeup" 
+                        type="time"
+                        value={sleepForm.wakeup} 
+                        onChange={handleSleepChange} 
+                        className="mt-1"
+                      />
+                    </div>
                   </div>
                   
                   <div>
@@ -354,7 +410,7 @@ const Mind = () => {
             <div className="animate-pulse h-6 w-6 rounded-full bg-violet-DEFAULT"></div>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-4 mt-4">
             {activeTab === 'meditation' ? (
               meditationSessions.length > 0 ? (
                 meditationSessions.map((session) => (
@@ -393,21 +449,29 @@ const Mind = () => {
                   <CardContent className="pt-4">
                     <div className="flex justify-between items-start">
                       <div>
-                        <h3 className="font-medium text-lg">{record.hours} hours</h3>
-                        <div className="flex items-center mt-1">
-                          <div className="flex">
-                            {Array.from({ length: 5 }).map((_, i) => (
-                              <div 
-                                key={i}
-                                className={`h-2 w-6 first:rounded-l-full last:rounded-r-full mr-0.5 ${
-                                  i < Math.ceil(record.quality_rating / 2) 
-                                    ? 'bg-indigo-DEFAULT' 
-                                    : 'bg-muted'
-                                }`}
-                              />
-                            ))}
+                        <h3 className="font-medium text-lg flex items-center">
+                          <Clock className="h-4 w-4 mr-2 text-indigo-DEFAULT" />
+                          {record.hours} hours
+                          {record.hours < 6 && (
+                            <AlertTriangle className="h-4 w-4 ml-2 text-amber-DEFAULT" title="Less than recommended" />
+                          )}
+                        </h3>
+                        <div className="flex items-center gap-4 mt-1">
+                          <div className="flex items-center">
+                            <div className="flex">
+                              {Array.from({ length: 5 }).map((_, i) => (
+                                <div 
+                                  key={i}
+                                  className={`h-2 w-6 first:rounded-l-full last:rounded-r-full mr-0.5 ${
+                                    i < Math.ceil(record.quality_rating / 2) 
+                                      ? 'bg-indigo-DEFAULT' 
+                                      : 'bg-muted'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                            <p className="text-sm text-muted-foreground ml-2">Quality: {record.quality_rating}/10</p>
                           </div>
-                          <p className="text-sm text-muted-foreground ml-2">Quality: {record.quality_rating}/10</p>
                         </div>
                       </div>
                       <p className="text-xs text-muted-foreground">

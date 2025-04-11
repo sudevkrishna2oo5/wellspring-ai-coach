@@ -94,10 +94,27 @@
 
   body {
     @apply bg-background text-foreground font-sans transition-colors duration-300;
+    letter-spacing: 0.01em;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-medium;
+    @apply font-display font-medium tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl sm:text-4xl font-semibold;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl sm:text-2xl;
+  }
+
+  p {
+    @apply leading-relaxed;
   }
 
   /* Transition for smooth mode switching */
@@ -154,7 +171,35 @@
   .button-bounce {
     @apply transform transition duration-200 ease-in-out active:scale-95;
   }
+  
+  /* Custom button styles */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-medium 
+           shadow-md hover:shadow-lg transition-all duration-300 hover:from-violet-600 hover:to-indigo-600;
+  }
+  
+  /* Sleep quality indicator */
+  .sleep-quality-indicator {
+    @apply h-2 rounded-full transition-all;
+  }
+  
+  /* Sleep quality colors */
+  .quality-poor {
+    @apply bg-red-400;
+  }
+  
+  .quality-fair {
+    @apply bg-amber-400;
+  }
+  
+  .quality-good {
+    @apply bg-green-400;
+  }
+  
+  .quality-excellent {
+    @apply bg-indigo-400;
+  }
 }
 
-/* Import Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Lexend:wght@300;400;500;600;700&display=swap');
+/* Import Google Fonts - deleted as we now import in index.html */
+

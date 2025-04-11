@@ -90,8 +90,8 @@ export default {
 				}
 			},
 			fontFamily: {
-				sans: ['"Inter"', 'sans-serif'],
-				display: ['"Lexend"', 'sans-serif']
+				sans: ['"Poppins"', 'sans-serif'],
+				display: ['"Poppins"', 'sans-serif']
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
