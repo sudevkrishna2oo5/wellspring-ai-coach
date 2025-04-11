@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -53,7 +52,6 @@ const Mind = () => {
       }
       
       try {
-        // Fetch meditation data
         const { data: meditationData, error: meditationError } = await supabase
           .from('meditation')
           .select('*')
@@ -63,7 +61,6 @@ const Mind = () => {
         if (meditationError) throw meditationError;
         setMeditationSessions(meditationData || []);
         
-        // Fetch sleep data
         const { data: sleepData, error: sleepError } = await supabase
           .from('sleep')
           .select('*')
@@ -73,7 +70,6 @@ const Mind = () => {
         if (sleepError) throw sleepError;
         setSleepRecords(sleepData || []);
 
-        // Calculate sleep analytics
         if (sleepData && sleepData.length > 0) {
           const analytics = getSleepAnalytics(sleepData);
           setSleepAnalytics(analytics);
@@ -185,7 +181,6 @@ const Mind = () => {
       const updatedRecords = [data[0], ...sleepRecords];
       setSleepRecords(updatedRecords);
       
-      // Update analytics with new record
       const analytics = getSleepAnalytics(updatedRecords);
       setSleepAnalytics(analytics);
       
@@ -251,7 +246,6 @@ const Mind = () => {
           </Button>
         </div>
 
-        {/* Sleep Dashboard */}
         {activeTab === 'sleep' && !loading && sleepAnalytics && (
           <div className={`space-y-6 ${showAddForm ? 'mt-6' : ''}`}>
             <SleepSummary analytics={sleepAnalytics} />
@@ -453,7 +447,10 @@ const Mind = () => {
                           <Clock className="h-4 w-4 mr-2 text-indigo-DEFAULT" />
                           {record.hours} hours
                           {record.hours < 6 && (
-                            <AlertTriangle className="h-4 w-4 ml-2 text-amber-DEFAULT" title="Less than recommended" />
+                            <AlertTriangle 
+                              className="h-4 w-4 ml-2 text-amber-DEFAULT" 
+                              aria-label="Less than recommended"
+                            />
                           )}
                         </h3>
                         <div className="flex items-center gap-4 mt-1">
