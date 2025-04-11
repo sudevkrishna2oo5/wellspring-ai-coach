@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Clock, Route, Flame, PlayCircle, PauseCircle, Save, Share2, FastForward } from 'lucide-react';
+import { ArrowLeft, Clock, Route, Flame, PlayCircle, PauseCircle, Save, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +8,27 @@ import BottomNavbar from '@/components/BottomNavbar';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 
+declare global {
+  interface Window {
+    google: typeof google;
+    initMap: () => void;
+  }
+}
+
+interface Position {
+  lat: number;
+  lng: number;
+}
+
+interface NearbyPlace {
+  name?: string;
+  vicinity?: string;
+  rating?: number;
+  geometry?: {
+    location?: google.maps.LatLng;
+  };
+}
+
 const Activity = () => {
   const navigate = useNavigate();
   const [tracking, setTracking] = useState(false);
@@ -16,20 +36,19 @@ const Activity = () => {
   const [distance, setDistance] = useState(0);
   const [calories, setCalories] = useState(0);
   const [pace, setPace] = useState('0:00');
-  const [positions, setPositions] = useState<{lat: number, lng: number}[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
   const [watchId, setWatchId] = useState<number | null>(null);
-  const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
+  const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
   const mapRef = useRef<HTMLDivElement>(null);
   const mapInstance = useRef<google.maps.Map | null>(null);
   const routePathRef = useRef<google.maps.Polyline | null>(null);
   const timerRef = useRef<number | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
-  // Initialize the map when component mounts
   useEffect(() => {
-    if (!mapRef.current) return;
+    window.initMap = () => {
+      if (!mapRef.current) return;
 
-    // Load Google Maps
-    const initMap = () => {
       const mapOptions = {
         center: { lat: 51.5074, lng: 0.1278 }, // Default to London
         zoom: 15,
@@ -44,17 +63,17 @@ const Activity = () => {
         ]
       };
 
-      mapInstance.current = new google.maps.Map(mapRef.current, mapOptions);
+      mapInstance.current = new window.google.maps.Map(mapRef.current, mapOptions);
 
-      // Initialize polyline for route
-      routePathRef.current = new google.maps.Polyline({
+      routePathRef.current = new window.google.maps.Polyline({
         strokeColor: '#FF0000',
         strokeOpacity: 1.0,
         strokeWeight: 5,
         map: mapInstance.current
       });
 
-      // Try to get user's current position to center the map
+      setMapLoaded(true);
+
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -63,7 +82,6 @@ const Activity = () => {
               lng: position.coords.longitude
             };
             mapInstance.current?.setCenter(pos);
-            // Find nearby fitness places
             findNearbyFitnessPlaces(pos);
           },
           () => {
@@ -75,42 +93,39 @@ const Activity = () => {
       }
     };
 
-    // Load Google Maps API
     if (!window.google) {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap`;
       script.async = true;
       script.defer = true;
-      script.onload = initMap;
       document.head.appendChild(script);
-    } else {
-      initMap();
+    } else if (mapRef.current && !mapInstance.current) {
+      window.initMap();
     }
 
     return () => {
-      // Cleanup
       if (watchId) navigator.geolocation.clearWatch(watchId);
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
 
-  const findNearbyFitnessPlaces = (location: {lat: number, lng: number}) => {
-    if (!window.google || !mapInstance.current) return;
+  const findNearbyFitnessPlaces = (location: Position) => {
+    if (!window.google || !mapInstance.current || !mapLoaded) return;
     
-    const service = new google.maps.places.PlacesService(mapInstance.current);
+    const service = new window.google.maps.places.PlacesService(mapInstance.current);
     service.nearbySearch(
       {
         location: location,
         radius: 1500, // meters
         type: ['gym', 'park']
-      },
+      } as google.maps.places.PlacesServiceRequest,
       (results, status) => {
-        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
-          setNearbyPlaces(results);
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          setNearbyPlaces(results as NearbyPlace[]);
           
           results.forEach(place => {
             if (place.geometry && place.geometry.location && mapInstance.current) {
-              const marker = new google.maps.Marker({
+              const marker = new window.google.maps.Marker({
                 map: mapInstance.current,
                 position: place.geometry.location,
                 title: place.name,
@@ -119,7 +134,7 @@ const Activity = () => {
                 }
               });
               
-              const infoWindow = new google.maps.InfoWindow({
+              const infoWindow = new window.google.maps.InfoWindow({
                 content: `<div><strong>${place.name}</strong><br>${place.vicinity}</div>`
               });
               
@@ -150,27 +165,21 @@ const Activity = () => {
       routePathRef.current.setPath([]);
     }
 
-    // Start timer
     const startTime = Date.now();
     timerRef.current = window.setInterval(() => {
       const newElapsed = Math.floor((Date.now() - startTime) / 1000);
       setElapsed(newElapsed);
       
-      // Update pace if we have distance
       if (distance > 0) {
-        // pace in minutes per km
         const paceMinutes = (newElapsed / 60) / (distance / 1000);
         const paceMin = Math.floor(paceMinutes);
         const paceSec = Math.floor((paceMinutes - paceMin) * 60);
         setPace(`${paceMin}:${paceSec.toString().padStart(2, '0')}`);
         
-        // Roughly estimate calories burned (very simplified)
-        // Assuming 60 kcal per km for a person of average weight jogging
         setCalories(Math.round(distance / 1000 * 60));
       }
     }, 1000);
 
-    // Start location tracking
     const id = navigator.geolocation.watchPosition(
       (position) => {
         const newPos = {
@@ -181,15 +190,12 @@ const Activity = () => {
         setPositions(prev => {
           const newPositions = [...prev, newPos];
           
-          // Update polyline on map
           if (routePathRef.current) {
             routePathRef.current.setPath(newPositions);
           }
           
-          // Recenter map
           mapInstance.current?.setCenter(newPos);
           
-          // Calculate distance
           if (prev.length > 0) {
             const lastPos = prev[prev.length - 1];
             const segmentDistance = calculateDistance(
@@ -252,8 +258,6 @@ const Activity = () => {
         created_at: new Date().toISOString()
       };
       
-      // In a real app, you would save this to your database
-      // For now, let's just show a success message
       toast.success('Activity saved successfully!');
       navigate('/workout');
     } catch (error) {
@@ -263,7 +267,6 @@ const Activity = () => {
   };
 
   const shareActivity = () => {
-    // This would integrate with the device's share API in a real app
     toast.info('Sharing functionality would be implemented here');
   };
 
