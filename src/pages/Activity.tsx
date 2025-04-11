@@ -114,12 +114,14 @@ const Activity = () => {
     if (!window.google || !mapInstance.current || !mapLoaded) return;
     
     const service = new window.google.maps.places.PlacesService(mapInstance.current);
+    
+    // Fix the type property to be a single string, as required by PlaceSearchRequest
     service.nearbySearch(
       {
         location: location,
         radius: 1500, // meters
-        type: ['gym', 'park']
-      } as google.maps.places.PlaceSearchRequest, // Updated from PlacesServiceRequest to PlaceSearchRequest
+        type: 'gym' // Changed from array to single string
+      } as google.maps.places.PlaceSearchRequest,
       (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           setNearbyPlaces(results as NearbyPlace[]);
@@ -132,6 +134,43 @@ const Activity = () => {
                 title: place.name,
                 icon: {
                   url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                }
+              });
+              
+              const infoWindow = new window.google.maps.InfoWindow({
+                content: `<div><strong>${place.name}</strong><br>${place.vicinity}</div>`
+              });
+              
+              marker.addListener('click', () => {
+                infoWindow.open(mapInstance.current, marker);
+              });
+            }
+          });
+        }
+      }
+    );
+
+    // Add a separate search for parks
+    const parkService = new window.google.maps.places.PlacesService(mapInstance.current);
+    parkService.nearbySearch(
+      {
+        location: location,
+        radius: 1500,
+        type: 'park'
+      } as google.maps.places.PlaceSearchRequest,
+      (results, status) => {
+        if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
+          // Combine with existing places
+          setNearbyPlaces(prevPlaces => [...prevPlaces, ...(results as NearbyPlace[])]);
+          
+          results.forEach(place => {
+            if (place.geometry && place.geometry.location && mapInstance.current) {
+              const marker = new window.google.maps.Marker({
+                map: mapInstance.current,
+                position: place.geometry.location,
+                title: place.name,
+                icon: {
+                  url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
                 }
               });
               
