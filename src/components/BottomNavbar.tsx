@@ -9,7 +9,10 @@ import {
   Brain,
   BarChart3,
   Users,
-  Bot
+  Bot,
+  Map,
+  Calendar,
+  Trophy
 } from "lucide-react";
 
 const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
@@ -24,7 +27,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 h-16 bg-background/80 backdrop-blur-lg border-t border-border z-50">
-      <div className="grid grid-cols-8 h-full max-w-md mx-auto">
+      <div className="grid grid-cols-5 h-full max-w-md mx-auto">
         <Link
           to="/"
           className={`flex flex-col items-center justify-center ${
@@ -46,53 +49,23 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         </Link>
         
         <Link
-          to="/meals"
+          to="/activity"
           className={`flex flex-col items-center justify-center ${
-            isActive("/meals") ? "text-primary" : "text-muted-foreground"
+            isActive("/activity", ["/activity/", "/routes", "/tracker"]) ? "text-primary" : "text-muted-foreground"
           }`}
         >
-          <Utensils className="h-5 w-5" />
-          <span className="text-xs">Meals</span>
+          <Map className="h-5 w-5" />
+          <span className="text-xs">Activity</span>
         </Link>
         
         <Link
-          to="/community"
+          to="/streaks"
           className={`flex flex-col items-center justify-center ${
-            isActive("/community") ? "text-primary" : "text-muted-foreground"
+            isActive("/streaks") ? "text-primary" : "text-muted-foreground"
           }`}
         >
-          <Users className="h-5 w-5" />
-          <span className="text-xs">Social</span>
-        </Link>
-        
-        <Link
-          to="/chat"
-          className={`flex flex-col items-center justify-center ${
-            isActive("/chat") ? "text-primary" : "text-muted-foreground"
-          }`}
-        >
-          <Bot className="h-5 w-5" />
-          <span className="text-xs">Chat</span>
-        </Link>
-        
-        <Link
-          to="/mind"
-          className={`flex flex-col items-center justify-center ${
-            isActive("/mind") ? "text-primary" : "text-muted-foreground"
-          }`}
-        >
-          <Brain className="h-5 w-5" />
-          <span className="text-xs">Mind</span>
-        </Link>
-        
-        <Link
-          to="/progress"
-          className={`flex flex-col items-center justify-center ${
-            isActive("/progress", ["/steps"]) ? "text-primary" : "text-muted-foreground"
-          }`}
-        >
-          <BarChart3 className="h-5 w-5" />
-          <span className="text-xs">Progress</span>
+          <Trophy className="h-5 w-5" />
+          <span className="text-xs">Streaks</span>
         </Link>
         
         <Link

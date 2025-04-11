@@ -1,0 +1,395 @@
+
+import React, { useState, useEffect, useRef } from 'react';
+import { ArrowLeft, Clock, Route, Flame, PlayCircle, PauseCircle, Save, Share2, FastForward } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { toast } from 'sonner';
+import BottomNavbar from '@/components/BottomNavbar';
+import { supabase } from '@/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
+
+const Activity = () => {
+  const navigate = useNavigate();
+  const [tracking, setTracking] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+  const [distance, setDistance] = useState(0);
+  const [calories, setCalories] = useState(0);
+  const [pace, setPace] = useState('0:00');
+  const [positions, setPositions] = useState<{lat: number, lng: number}[]>([]);
+  const [watchId, setWatchId] = useState<number | null>(null);
+  const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstance = useRef<google.maps.Map | null>(null);
+  const routePathRef = useRef<google.maps.Polyline | null>(null);
+  const timerRef = useRef<number | null>(null);
+
+  // Initialize the map when component mounts
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    // Load Google Maps
+    const initMap = () => {
+      const mapOptions = {
+        center: { lat: 51.5074, lng: 0.1278 }, // Default to London
+        zoom: 15,
+        disableDefaultUI: true,
+        zoomControl: true,
+        styles: [
+          {
+            featureType: 'poi',
+            elementType: 'labels',
+            stylers: [{ visibility: 'off' }]
+          }
+        ]
+      };
+
+      mapInstance.current = new google.maps.Map(mapRef.current, mapOptions);
+
+      // Initialize polyline for route
+      routePathRef.current = new google.maps.Polyline({
+        strokeColor: '#FF0000',
+        strokeOpacity: 1.0,
+        strokeWeight: 5,
+        map: mapInstance.current
+      });
+
+      // Try to get user's current position to center the map
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const pos = {
+              lat: position.coords.latitude,
+              lng: position.coords.longitude
+            };
+            mapInstance.current?.setCenter(pos);
+            // Find nearby fitness places
+            findNearbyFitnessPlaces(pos);
+          },
+          () => {
+            toast.error('Error: The Geolocation service failed.');
+          }
+        );
+      } else {
+        toast.error('Error: Your browser doesn\'t support geolocation.');
+      }
+    };
+
+    // Load Google Maps API
+    if (!window.google) {
+      const script = document.createElement('script');
+      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places`;
+      script.async = true;
+      script.defer = true;
+      script.onload = initMap;
+      document.head.appendChild(script);
+    } else {
+      initMap();
+    }
+
+    return () => {
+      // Cleanup
+      if (watchId) navigator.geolocation.clearWatch(watchId);
+      if (timerRef.current) clearInterval(timerRef.current);
+    };
+  }, []);
+
+  const findNearbyFitnessPlaces = (location: {lat: number, lng: number}) => {
+    if (!window.google || !mapInstance.current) return;
+    
+    const service = new google.maps.places.PlacesService(mapInstance.current);
+    service.nearbySearch(
+      {
+        location: location,
+        radius: 1500, // meters
+        type: ['gym', 'park']
+      },
+      (results, status) => {
+        if (status === google.maps.places.PlacesServiceStatus.OK && results) {
+          setNearbyPlaces(results);
+          
+          results.forEach(place => {
+            if (place.geometry && place.geometry.location && mapInstance.current) {
+              const marker = new google.maps.Marker({
+                map: mapInstance.current,
+                position: place.geometry.location,
+                title: place.name,
+                icon: {
+                  url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                }
+              });
+              
+              const infoWindow = new google.maps.InfoWindow({
+                content: `<div><strong>${place.name}</strong><br>${place.vicinity}</div>`
+              });
+              
+              marker.addListener('click', () => {
+                infoWindow.open(mapInstance.current, marker);
+              });
+            }
+          });
+        }
+      }
+    );
+  };
+
+  const startTracking = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocation is not supported by your browser');
+      return;
+    }
+
+    setTracking(true);
+    setElapsed(0);
+    setDistance(0);
+    setCalories(0);
+    setPace('0:00');
+    setPositions([]);
+
+    if (routePathRef.current) {
+      routePathRef.current.setPath([]);
+    }
+
+    // Start timer
+    const startTime = Date.now();
+    timerRef.current = window.setInterval(() => {
+      const newElapsed = Math.floor((Date.now() - startTime) / 1000);
+      setElapsed(newElapsed);
+      
+      // Update pace if we have distance
+      if (distance > 0) {
+        // pace in minutes per km
+        const paceMinutes = (newElapsed / 60) / (distance / 1000);
+        const paceMin = Math.floor(paceMinutes);
+        const paceSec = Math.floor((paceMinutes - paceMin) * 60);
+        setPace(`${paceMin}:${paceSec.toString().padStart(2, '0')}`);
+        
+        // Roughly estimate calories burned (very simplified)
+        // Assuming 60 kcal per km for a person of average weight jogging
+        setCalories(Math.round(distance / 1000 * 60));
+      }
+    }, 1000);
+
+    // Start location tracking
+    const id = navigator.geolocation.watchPosition(
+      (position) => {
+        const newPos = {
+          lat: position.coords.latitude,
+          lng: position.coords.longitude
+        };
+        
+        setPositions(prev => {
+          const newPositions = [...prev, newPos];
+          
+          // Update polyline on map
+          if (routePathRef.current) {
+            routePathRef.current.setPath(newPositions);
+          }
+          
+          // Recenter map
+          mapInstance.current?.setCenter(newPos);
+          
+          // Calculate distance
+          if (prev.length > 0) {
+            const lastPos = prev[prev.length - 1];
+            const segmentDistance = calculateDistance(
+              lastPos.lat, lastPos.lng, 
+              newPos.lat, newPos.lng
+            );
+            setDistance(d => d + segmentDistance);
+          }
+          
+          return newPositions;
+        });
+      },
+      (error) => {
+        toast.error(`Error getting location: ${error.message}`);
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 5000,
+        maximumAge: 0
+      }
+    );
+    
+    setWatchId(id);
+  };
+
+  const pauseTracking = () => {
+    setTracking(false);
+    if (watchId !== null) {
+      navigator.geolocation.clearWatch(watchId);
+      setWatchId(null);
+    }
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  };
+
+  const resumeTracking = () => {
+    startTracking();
+  };
+
+  const saveActivity = async () => {
+    try {
+      pauseTracking();
+      
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session) {
+        toast.error('You must be logged in to save activities');
+        return;
+      }
+      
+      const activityData = {
+        user_id: session.session.user.id,
+        distance: distance,
+        duration: elapsed,
+        calories: calories,
+        average_pace: pace,
+        route_data: positions,
+        activity_type: 'running',
+        created_at: new Date().toISOString()
+      };
+      
+      // In a real app, you would save this to your database
+      // For now, let's just show a success message
+      toast.success('Activity saved successfully!');
+      navigate('/workout');
+    } catch (error) {
+      console.error('Error saving activity:', error);
+      toast.error('Failed to save activity');
+    }
+  };
+
+  const shareActivity = () => {
+    // This would integrate with the device's share API in a real app
+    toast.info('Sharing functionality would be implemented here');
+  };
+
+  const formatTime = (seconds: number) => {
+    const hrs = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    
+    if (hrs > 0) {
+      return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Radius of the earth in km
+    const dLat = deg2rad(lat2 - lat1);
+    const dLon = deg2rad(lon2 - lon1);
+    const a = 
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
+      Math.sin(dLon / 2) * Math.sin(dLon / 2)
+    ; 
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
+    const distance = R * c * 1000; // Distance in meters
+    return distance;
+  };
+
+  const deg2rad = (deg: number) => {
+    return deg * (Math.PI / 180);
+  };
+
+  return (
+    <div className="min-h-screen bg-background pb-16">
+      <header className="fixed top-0 inset-x-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border">
+        <div className="flex items-center h-14 px-4">
+          <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-bold ml-4">Activity Tracker</h1>
+        </div>
+      </header>
+
+      <main className="pt-14 pb-16">
+        <div ref={mapRef} className="w-full h-[40vh]" />
+
+        <div className="p-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-xs text-muted-foreground">Distance</p>
+                  <h3 className="text-xl font-bold">{(distance / 1000).toFixed(2)} km</h3>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Time</p>
+                  <h3 className="text-xl font-bold">{formatTime(elapsed)}</h3>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Pace</p>
+                  <h3 className="text-xl font-bold">{pace} min/km</h3>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Calories</p>
+                  <h3 className="text-xl font-bold">{calories}</h3>
+                </div>
+              </div>
+
+              <div className="flex justify-center gap-4 mt-6">
+                {!tracking ? (
+                  <Button onClick={startTracking} className="flex-1 gap-2" size="lg">
+                    <PlayCircle className="h-5 w-5" /> Start
+                  </Button>
+                ) : (
+                  <>
+                    <Button onClick={pauseTracking} variant="outline" className="flex-1 gap-2" size="lg">
+                      <PauseCircle className="h-5 w-5" /> Pause
+                    </Button>
+                    <Button onClick={saveActivity} className="flex-1 gap-2" size="lg">
+                      <Save className="h-5 w-5" /> Save
+                    </Button>
+                  </>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Tabs defaultValue="nearby" className="mt-4">
+            <TabsList className="grid grid-cols-2">
+              <TabsTrigger value="nearby">Nearby Places</TabsTrigger>
+              <TabsTrigger value="routes">My Routes</TabsTrigger>
+            </TabsList>
+            <TabsContent value="nearby" className="mt-2">
+              <div className="space-y-2">
+                {nearbyPlaces.length > 0 ? (
+                  nearbyPlaces.slice(0, 5).map((place, index) => (
+                    <Card key={index}>
+                      <CardContent className="p-3">
+                        <h3 className="font-medium">{place.name}</h3>
+                        <p className="text-sm text-muted-foreground">{place.vicinity}</p>
+                        <div className="flex items-center gap-1 mt-1">
+                          <div className="flex">
+                            {Array.from({ length: Math.round(place.rating || 0) }).map((_, i) => (
+                              <span key={i} className="text-yellow-500">★</span>
+                            ))}
+                          </div>
+                          <span className="text-xs text-muted-foreground">{place.rating}</span>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">No nearby fitness places found</p>
+                )}
+              </div>
+            </TabsContent>
+            <TabsContent value="routes" className="mt-2">
+              <p className="text-center text-muted-foreground py-8">Your saved routes will appear here</p>
+            </TabsContent>
+          </Tabs>
+        </div>
+      </main>
+
+      <BottomNavbar currentPage="/activity" />
+    </div>
+  );
+};
+
+export default Activity;

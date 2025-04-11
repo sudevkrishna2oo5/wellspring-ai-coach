@@ -19,6 +19,9 @@ import StepProgress from "./pages/StepProgress";
 import NotFound from "./pages/NotFound";
 import Onboarding from "./pages/Onboarding";
 import Community from "./pages/Community";
+import Activity from "./pages/Activity";
+import Streaks from "./pages/Streaks";
+import WorkoutPlanner from "./pages/WorkoutPlanner";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -147,6 +150,12 @@ const App = () => {
               <Route path="/steps" element={isAuthenticated ? <StepProgress /> : <Navigate to="/auth" />} />
               <Route path="/onboarding" element={isAuthenticated ? <Onboarding /> : <Navigate to="/auth" />} />
               <Route path="/community" element={isAuthenticated ? <Community /> : <Navigate to="/auth" />} />
+              
+              {/* New Routes for Fitness App Features */}
+              <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" />} />
+              <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" />} />
+              <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
