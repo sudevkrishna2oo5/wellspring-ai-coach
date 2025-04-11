@@ -15,8 +15,10 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
   const location = useLocation();
   const currentPath = location.pathname;
   
-  const isActive = (path: string) => {
-    return currentPath === path || currentPage === path;
+  const isActive = (path: string, altPaths: string[] = []) => {
+    if (currentPath === path || currentPage === path) return true;
+    if (altPaths.some(altPath => currentPath.startsWith(altPath))) return true;
+    return false;
   };
 
   return (
@@ -35,7 +37,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         <Link
           to="/workout"
           className={`flex flex-col items-center justify-center ${
-            isActive("/workout") || currentPage === "workout" ? "text-primary" : "text-muted-foreground"
+            isActive("/workout", ["/workout/"]) ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <Dumbbell className="h-5 w-5" />
@@ -45,7 +47,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         <Link
           to="/meals"
           className={`flex flex-col items-center justify-center ${
-            isActive("/meals") || currentPage === "meals" ? "text-primary" : "text-muted-foreground"
+            isActive("/meals") ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <Utensils className="h-5 w-5" />
@@ -55,7 +57,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         <Link
           to="/community"
           className={`flex flex-col items-center justify-center ${
-            isActive("/community") || currentPage === "community" ? "text-primary" : "text-muted-foreground"
+            isActive("/community") ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <Users className="h-5 w-5" />
@@ -65,7 +67,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         <Link
           to="/mind"
           className={`flex flex-col items-center justify-center ${
-            isActive("/mind") || currentPage === "mind" ? "text-primary" : "text-muted-foreground"
+            isActive("/mind") ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <Brain className="h-5 w-5" />
@@ -75,7 +77,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         <Link
           to="/progress"
           className={`flex flex-col items-center justify-center ${
-            isActive("/progress") || currentPage === "progress" ? "text-primary" : "text-muted-foreground"
+            isActive("/progress", ["/steps"]) ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <BarChart3 className="h-5 w-5" />
@@ -85,7 +87,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         <Link
           to="/profile"
           className={`flex flex-col items-center justify-center ${
-            isActive("/profile") || currentPage === "profile" ? "text-primary" : "text-muted-foreground"
+            isActive("/profile") ? "text-primary" : "text-muted-foreground"
           }`}
         >
           <User className="h-5 w-5" />

@@ -22,40 +22,75 @@ import Community from "./pages/Community";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isNewUser, setIsNewUser] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const { data } = await supabase.auth.getSession();
-      setIsAuthenticated(!!data.session);
-      
-      if (data.session) {
-        // Check if user has completed onboarding by looking for profile data
-        const { data: profileData } = await supabase
-          .from('profiles')
-          .select('full_name, goals')
-          .eq('id', data.session.user.id)
-          .single();
+      try {
+        const { data, error } = await supabase.auth.getSession();
         
-        // If goals are empty or full_name is empty, consider the user as new
-        setIsNewUser(!profileData?.goals?.length || !profileData?.full_name);
+        if (error) {
+          console.error("Error getting session:", error);
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          setCheckingSession(false);
+          return;
+        }
+        
+        setIsAuthenticated(!!data.session);
+        
+        if (data.session) {
+          // Check if user has completed onboarding by looking for profile data
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, goals')
+            .eq('id', data.session.user.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') { // Code for "no rows returned"
+            console.error("Error fetching profile:", profileError);
+          }
+          
+          // If goals are empty or full_name is empty, consider the user as new
+          setIsNewUser(!profileData?.goals?.length || !profileData?.full_name);
+        }
+      } catch (error) {
+        console.error("Unexpected error during auth check:", error);
+        setIsAuthenticated(false);
+      } finally {
+        setIsLoading(false);
+        setCheckingSession(false);
       }
-      
-      setIsLoading(false);
     };
     
     checkAuth();
     
-    const { data: authListener } = supabase.auth.onAuthStateChange((event) => {
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
       if (event === 'SIGNED_IN') {
         setIsAuthenticated(true);
+        // Check if the user needs onboarding
+        if (session?.user) {
+          setTimeout(() => {
+            checkNewUserStatus(session.user.id);
+          }, 0);
+        }
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
+        setIsNewUser(false);
       }
     });
 
@@ -63,6 +98,25 @@ const App = () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
+
+  const checkNewUserStatus = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('full_name, goals')
+        .eq('id', userId)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error("Error checking new user status:", error);
+        return;
+      }
+      
+      setIsNewUser(!data?.goals?.length || !data?.full_name);
+    } catch (error) {
+      console.error("Error in checkNewUserStatus:", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -93,7 +147,6 @@ const App = () => {
               <Route path="/steps" element={isAuthenticated ? <StepProgress /> : <Navigate to="/auth" />} />
               <Route path="/onboarding" element={isAuthenticated ? <Onboarding /> : <Navigate to="/auth" />} />
               <Route path="/community" element={isAuthenticated ? <Community /> : <Navigate to="/auth" />} />
-              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

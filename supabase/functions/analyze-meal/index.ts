@@ -18,6 +18,7 @@ serve(async (req) => {
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 
     if (!openAIApiKey) {
+      console.error("OpenAI API key is not configured");
       return new Response(JSON.stringify({ error: "OpenAI API key is not configured" }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -25,12 +26,15 @@ serve(async (req) => {
     }
 
     if (!mealDescription) {
+      console.error("Meal description is missing");
       return new Response(JSON.stringify({ error: "Meal description is required" }), { 
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
       });
     }
 
+    console.log("Analyzing meal description:", mealDescription);
+    
     // Call OpenAI to analyze the meal
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -53,6 +57,7 @@ serve(async (req) => {
 
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("Error from OpenAI API:", errorData);
       return new Response(JSON.stringify({ error: "Error analyzing meal", details: errorData }), { 
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
@@ -60,12 +65,16 @@ serve(async (req) => {
     }
 
     const aiResponse = await response.json();
+    console.log("OpenAI response:", aiResponse);
+    
     const nutritionInfo = JSON.parse(aiResponse.choices[0].message.content);
+    console.log("Extracted nutrition info:", nutritionInfo);
 
     return new Response(JSON.stringify(nutritionInfo), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
+    console.error("Error in analyze-meal function:", error);
     return new Response(JSON.stringify({ error: error.message }), { 
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
