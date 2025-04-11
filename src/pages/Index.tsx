@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -61,14 +60,14 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-500/5 via-background to-indigo-500/5 flex flex-col transition-colors duration-300">
       <motion.header 
-        className="py-4 px-6 flex justify-between items-center gradient-primary"
+        className="py-3 md:py-4 px-4 md:px-6 flex justify-between items-center gradient-primary"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <h1 className="text-2xl font-bold flex items-center text-white">
-          <div className="w-8 h-8 rounded-full bg-white mr-2 flex items-center justify-center">
-            <Dumbbell className="h-5 w-5 text-violet-500" />
+        <h1 className="text-xl md:text-2xl font-bold flex items-center text-white">
+          <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white mr-2 flex items-center justify-center">
+            <Dumbbell className="h-4 w-4 md:h-5 md:w-5 text-violet-500" />
           </div>
           FitVibe
         </h1>
@@ -76,27 +75,34 @@ const Index = () => {
           <ThemeSwitcher />
           
           {user ? (
-            <div className="flex gap-2">
-              <Button 
-                variant="ghost" 
-                onClick={() => handleNavigation('/chat')}
-                className="text-white hover:bg-white/10"
-              >
-                <MessageSquare className="h-5 w-5 md:mr-2" />
-                <span className="hidden md:inline">Assistant</span>
-              </Button>
-              <Button 
-                variant="ghost" 
-                onClick={() => handleNavigation('/profile')}
-                className="text-white hover:bg-white/10"
-              >
-                <User className="h-5 w-5 md:mr-2" />
-                <span className="hidden md:inline">Profile</span>
-              </Button>
+            <div className="flex gap-1 md:gap-2">
+              {!isMobile && (
+                <>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => handleNavigation('/chat')}
+                    className="text-white hover:bg-white/10"
+                    size={isMobile ? "sm" : "default"}
+                  >
+                    <MessageSquare className="h-5 w-5 md:mr-2" />
+                    <span className="hidden md:inline">Assistant</span>
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    onClick={() => handleNavigation('/profile')}
+                    className="text-white hover:bg-white/10"
+                    size={isMobile ? "sm" : "default"}
+                  >
+                    <User className="h-5 w-5 md:mr-2" />
+                    <span className="hidden md:inline">Profile</span>
+                  </Button>
+                </>
+              )}
               <Button
                 variant="ghost"
                 onClick={handleLogout}
                 className="text-white hover:bg-white/10"
+                size={isMobile ? "sm" : "default"}
               >
                 <LogOut className="h-5 w-5 md:mr-2" />
                 <span className="hidden md:inline">Logout</span>
@@ -106,6 +112,7 @@ const Index = () => {
             <Button
               onClick={() => handleNavigation('/auth')}
               className="bg-white/10 hover:bg-white/20 text-white"
+              size={isMobile ? "sm" : "default"}
             >
               Sign In
             </Button>
@@ -113,7 +120,7 @@ const Index = () => {
         </div>
       </motion.header>
 
-      <main className="flex-1 p-6 pb-16">
+      <main className="flex-1 p-4 md:p-6 pb-20">
         {user ? (
           <Dashboard />
         ) : (
@@ -121,16 +128,18 @@ const Index = () => {
         )}
       </main>
       
-      {user && <BottomNavbar currentPage="home" />}
+      {user && <BottomNavbar currentPage="/" />}
     </div>
   );
 };
 
 const WelcomeScreen = ({ onGetStarted }) => {
+  const isMobile = useIsMobile();
+
   return (
-    <div className="max-w-4xl mx-auto text-center py-12">
+    <div className="max-w-4xl mx-auto text-center py-6 md:py-12">
       <motion.h1 
-        className="text-4xl font-bold mb-6 bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent"
+        className="text-3xl md:text-4xl font-bold mb-4 md:mb-6 bg-gradient-to-r from-violet-500 to-indigo-500 bg-clip-text text-transparent"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
@@ -139,7 +148,7 @@ const WelcomeScreen = ({ onGetStarted }) => {
       </motion.h1>
       
       <motion.p 
-        className="text-xl mb-8 text-muted-foreground"
+        className="text-lg md:text-xl mb-6 md:mb-8 text-muted-foreground"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.3 }}
@@ -148,7 +157,7 @@ const WelcomeScreen = ({ onGetStarted }) => {
       </motion.p>
       
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-12"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
@@ -218,69 +227,61 @@ const FeatureCard = ({ icon, title, description, color }) => {
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const cardClasses = "hover:shadow-md transition-all duration-300 cursor-pointer";
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto">
+    <div className="space-y-4 md:space-y-6 max-w-5xl mx-auto">
       <WelcomeHeader />
       
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4"
+        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2, staggerChildren: 0.1 }}
       >
-        <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-          <StatCard 
-            title="Today's Workout" 
-            value="Not logged" 
-            icon={<Dumbbell className="h-5 w-5 text-violet-500" />}
-            onClick={() => navigate('/workout')}
-            color="violet"
-          />
-        </motion.div>
+        <StatCard 
+          title="Today's Workout" 
+          value="Not logged" 
+          icon={<Dumbbell className="h-5 w-5 text-violet-500" />}
+          onClick={() => navigate('/workout')}
+          color="violet"
+        />
         
-        <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-          <StatCard 
-            title="Today's Meals" 
-            value="0 kcal" 
-            icon={<Utensils className="h-5 w-5 text-indigo-500" />}
-            onClick={() => navigate('/meals')}
-            color="indigo"
-          />
-        </motion.div>
+        <StatCard 
+          title="Today's Meals" 
+          value="0 kcal" 
+          icon={<Utensils className="h-5 w-5 text-indigo-500" />}
+          onClick={() => navigate('/meals')}
+          color="indigo"
+        />
         
-        <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-          <StatCard 
-            title="Sleep Score" 
-            value="No data" 
-            icon={<Moon className="h-5 w-5 text-blue-500" />}
-            onClick={() => navigate('/mind')}
-            color="blue"
-          />
-        </motion.div>
+        <StatCard 
+          title="Sleep Score" 
+          value="No data" 
+          icon={<Moon className="h-5 w-5 text-blue-500" />}
+          onClick={() => navigate('/mind')}
+          color="blue"
+        />
         
-        <motion.div whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-          <StatCard 
-            title="Steps" 
-            value="Track now" 
-            icon={<StepsIcon />}
-            onClick={() => navigate('/steps')}
-            color="teal"
-          />
-        </motion.div>
+        <StatCard 
+          title="Steps" 
+          value="Track now" 
+          icon={<StepsIcon />}
+          onClick={() => navigate('/steps')}
+          color="teal"
+        />
       </motion.div>
       
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8"
+        className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-6 md:mt-8"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.4 }}
       >
         <motion.div 
           className="md:col-span-2"
-          whileHover={{ y: -5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card 
             className={`gradient-card ${cardClasses} h-full`} 
@@ -305,8 +306,7 @@ const Dashboard = () => {
         </motion.div>
         
         <motion.div
-          whileHover={{ y: -5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/chat')}>
             <CardHeader>
@@ -328,8 +328,7 @@ const Dashboard = () => {
         </motion.div>
         
         <motion.div 
-          whileHover={{ y: -5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/steps')}>
             <CardHeader>
@@ -351,8 +350,7 @@ const Dashboard = () => {
         </motion.div>
         
         <motion.div 
-          whileHover={{ y: -5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/meals')}>
             <CardHeader>
@@ -374,8 +372,7 @@ const Dashboard = () => {
         </motion.div>
         
         <motion.div 
-          whileHover={{ y: -5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/timer')}>
             <CardHeader>
@@ -397,8 +394,7 @@ const Dashboard = () => {
         </motion.div>
         
         <motion.div 
-          whileHover={{ y: -5 }}
-          transition={{ type: "spring", stiffness: 400, damping: 10 }}
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
           <Card className={`gradient-card ${cardClasses} h-full`} onClick={() => navigate('/progress')}>
             <CardHeader>
