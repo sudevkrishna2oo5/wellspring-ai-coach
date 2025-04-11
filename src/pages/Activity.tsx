@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Clock, Route, Flame, PlayCircle, PauseCircle, Save, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -118,7 +119,7 @@ const Activity = () => {
         location: location,
         radius: 1500, // meters
         type: ['gym', 'park']
-      } as google.maps.places.PlacesServiceRequest,
+      } as google.maps.places.PlaceSearchRequest, // Updated from PlacesServiceRequest to PlaceSearchRequest
       (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           setNearbyPlaces(results as NearbyPlace[]);
