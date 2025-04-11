@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.0";
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -18,6 +19,7 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Processing request to openai-chat function");
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { message, userId } = await req.json();
@@ -70,6 +72,8 @@ serve(async (req) => {
     }
 
     try {
+      console.log("Calling OpenAI API...");
+      
       // Call OpenAI for AI response with improved error handling
       const response = await fetch("https://api.openai.com/v1/chat/completions", {
         method: "POST",
@@ -101,13 +105,25 @@ serve(async (req) => {
         })
       });
 
+      console.log("OpenAI response status:", response.status);
+      
       if (!response.ok) {
         const errorData = await response.json();
         console.error("OpenAI API error:", errorData);
-        throw new Error(`OpenAI API error: ${errorData.error?.message || JSON.stringify(errorData)}`);
+        
+        // Try to provide more specific error messaging
+        if (response.status === 429) {
+          throw new Error("Rate limit exceeded. Please try again later.");
+        } else if (response.status === 401) {
+          throw new Error("OpenAI authentication error. Please check your API key.");
+        } else {
+          throw new Error(`OpenAI API error: ${errorData.error?.message || JSON.stringify(errorData)}`);
+        }
       }
 
       const openAiData = await response.json();
+      console.log("OpenAI response received successfully");
+      
       const aiResponse = openAiData.choices[0].message.content;
 
       // Store chat history in the database

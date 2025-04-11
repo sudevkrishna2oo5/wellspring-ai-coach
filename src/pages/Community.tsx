@@ -11,11 +11,12 @@ import BottomNavbar from '@/components/BottomNavbar';
 import { format } from 'date-fns';
 import { 
   ChevronLeft, Heart, MessageSquare, Share2, 
-  Image as ImageIcon, Smile, Send, X, PlusCircle
+  Image as ImageIcon, Smile, Send, X, PlusCircle, Trash2
 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tables } from '@/integrations/supabase/types';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type Post = Tables<'posts'> & { user_profile?: { username: string; avatar_url: string; full_name: string } };
 type Comment = Tables<'comments'> & { user_profile?: { username: string; avatar_url: string; full_name: string } };
@@ -32,9 +33,22 @@ const Community = () => {
   const [loadingComments, setLoadingComments] = useState(false);
   const [newPost, setNewPost] = useState({ content: '', type: 'text' });
   const [newComment, setNewComment] = useState('');
+  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [postToDelete, setPostToDelete] = useState<string | null>(null);
   
   useEffect(() => {
     fetchPosts();
+    
+    // Get current user ID
+    const getCurrentUser = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (session.session) {
+        setCurrentUser(session.session.user.id);
+      }
+    };
+    
+    getCurrentUser();
   }, []);
 
   const fetchPosts = async () => {
@@ -188,6 +202,42 @@ const Community = () => {
     }
   };
 
+  const handleDeletePost = async () => {
+    if (!postToDelete) return;
+    
+    try {
+      const { error } = await supabase
+        .from('posts')
+        .delete()
+        .eq('id', postToDelete);
+
+      if (error) throw error;
+      
+      // Remove the post from state
+      setPosts(posts.filter(post => post.id !== postToDelete));
+      
+      toast({
+        title: "Post deleted",
+        description: "Your post has been removed",
+        variant: "default",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error deleting post",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setShowDeleteDialog(false);
+      setPostToDelete(null);
+    }
+  };
+
+  const confirmDeletePost = (postId: string) => {
+    setPostToDelete(postId);
+    setShowDeleteDialog(true);
+  };
+
   const handleLikePost = async (postId: string) => {
     try {
       // Find the post and update its likes locally first for instant feedback
@@ -258,20 +308,34 @@ const Community = () => {
             {posts.map(post => (
               <Card key={post.id} className="overflow-hidden hover:shadow-md transition-all duration-300">
                 <CardContent className="p-4">
-                  <div className="flex items-center mb-3">
-                    <Avatar className="h-10 w-10 mr-3">
-                      {post.user_profile?.avatar_url ? (
-                        <AvatarImage src={post.user_profile.avatar_url} />
-                      ) : (
-                        <AvatarFallback>{getInitials(post.user_profile?.full_name || '')}</AvatarFallback>
-                      )}
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{post.user_profile?.full_name || 'User'}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {post.created_at && format(new Date(post.created_at), 'MMM d, h:mm a')}
-                      </p>
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      <Avatar className="h-10 w-10 mr-3">
+                        {post.user_profile?.avatar_url ? (
+                          <AvatarImage src={post.user_profile.avatar_url} />
+                        ) : (
+                          <AvatarFallback>{getInitials(post.user_profile?.full_name || '')}</AvatarFallback>
+                        )}
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{post.user_profile?.full_name || 'User'}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {post.created_at && format(new Date(post.created_at), 'MMM d, h:mm a')}
+                        </p>
+                      </div>
                     </div>
+                    
+                    {/* Delete button - only shown for user's own posts */}
+                    {currentUser === post.user_id && (
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => confirmDeletePost(post.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                   
                   <p className="py-2">{post.content}</p>
@@ -328,6 +392,24 @@ const Community = () => {
             </Button>
           </div>
         )}
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete your post and all associated comments.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleDeletePost} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Create Post Dialog */}
         <Dialog open={showCreatePost} onOpenChange={setShowCreatePost}>

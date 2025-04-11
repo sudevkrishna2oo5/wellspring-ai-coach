@@ -8,7 +8,8 @@ import {
   Utensils,
   Brain,
   BarChart3,
-  Users
+  Users,
+  Bot
 } from "lucide-react";
 
 const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
@@ -23,7 +24,7 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
 
   return (
     <nav className="fixed bottom-0 inset-x-0 h-16 bg-background/80 backdrop-blur-lg border-t border-border z-50">
-      <div className="grid grid-cols-7 h-full max-w-md mx-auto">
+      <div className="grid grid-cols-8 h-full max-w-md mx-auto">
         <Link
           to="/"
           className={`flex flex-col items-center justify-center ${
@@ -62,6 +63,16 @@ const BottomNavbar: React.FC<{ currentPage?: string }> = ({ currentPage }) => {
         >
           <Users className="h-5 w-5" />
           <span className="text-xs">Social</span>
+        </Link>
+        
+        <Link
+          to="/chat"
+          className={`flex flex-col items-center justify-center ${
+            isActive("/chat") ? "text-primary" : "text-muted-foreground"
+          }`}
+        >
+          <Bot className="h-5 w-5" />
+          <span className="text-xs">Chat</span>
         </Link>
         
         <Link

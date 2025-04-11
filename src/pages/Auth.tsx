@@ -27,6 +27,7 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [isLogin, setIsLogin] = useState(true);
+  const [errorMsg, setErrorMsg] = useState('');
   
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -47,6 +48,7 @@ const Auth = () => {
   const handleEmailAuth = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     try {
       if (isLogin) {
@@ -76,6 +78,7 @@ const Auth = () => {
         });
       }
     } catch (error) {
+      setErrorMsg(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -89,10 +92,12 @@ const Auth = () => {
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     try {
       // Format phone number to E.164 format
       const formattedPhone = formatPhoneNumber(phoneNumber);
+      console.log("Sending OTP to formatted phone:", formattedPhone);
       
       const { error } = await supabase.auth.signInWithOtp({
         phone: formattedPhone,
@@ -106,6 +111,8 @@ const Auth = () => {
         description: "A verification code has been sent to your phone.",
       });
     } catch (error) {
+      console.error("Error sending OTP:", error);
+      setErrorMsg(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -119,9 +126,11 @@ const Auth = () => {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMsg('');
 
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
+      console.log("Verifying OTP for phone:", formattedPhone, "OTP:", otp);
       
       const { error } = await supabase.auth.verifyOtp({
         phone: formattedPhone,
@@ -137,6 +146,8 @@ const Auth = () => {
       });
       navigate('/');
     } catch (error) {
+      console.error("Error verifying OTP:", error);
+      setErrorMsg(error.message);
       toast({
         title: "Error",
         description: error.message,
@@ -152,21 +163,29 @@ const Auth = () => {
     // Remove any non-digit characters
     const digits = phone.replace(/\D/g, '');
     
-    // Ensure it has the + prefix
-    if (!digits.startsWith('+')) {
-      // If no country code, assume US (+1)
-      if (digits.length === 10) {
-        return `+1${digits}`;
-      }
-      return `+${digits}`;
+    // If it already has the + prefix, return as is
+    if (phone.startsWith('+')) {
+      return phone;
     }
     
-    return phone;
+    // If no country code and starts with 0, replace the leading 0 with country code
+    if (digits.startsWith('0')) {
+      return `+91${digits.substring(1)}`;  // Assuming India (+91) as default
+    }
+    
+    // If 10 digits (no country code), add default country code
+    if (digits.length === 10) {
+      return `+91${digits}`;  // Assuming India (+91) as default
+    }
+    
+    // For other cases, just add a + prefix
+    return `+${digits}`;
   };
 
   const handleBackToPhoneInput = () => {
     setOtpSent(false);
     setOtp('');
+    setErrorMsg('');
   };
 
   const renderEmailAuthForm = () => (
@@ -206,6 +225,12 @@ const Auth = () => {
             />
           </div>
         </div>
+        
+        {errorMsg && (
+          <div className="text-destructive text-sm p-2 bg-destructive/10 rounded-md">
+            {errorMsg}
+          </div>
+        )}
       </CardContent>
       <CardFooter className="flex flex-col space-y-4">
         <Button 
@@ -242,7 +267,7 @@ const Auth = () => {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+91 (123) 456-7890"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="pl-10"
@@ -250,9 +275,15 @@ const Auth = () => {
                 />
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                Include country code (e.g., +1 for US)
+                Format: +91 for India or include your country code
               </p>
             </div>
+            
+            {errorMsg && (
+              <div className="text-destructive text-sm p-2 bg-destructive/10 rounded-md">
+                {errorMsg}
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button 
@@ -289,13 +320,19 @@ const Auth = () => {
                   render={({ slots }) => (
                     <InputOTPGroup>
                       {slots.map((slot, index) => (
-                        <InputOTPSlot key={index} {...slot} index={index} />
+                        <InputOTPSlot key={index} {...slot} />
                       ))}
                     </InputOTPGroup>
                   )}
                 />
               </div>
             </div>
+            
+            {errorMsg && (
+              <div className="text-destructive text-sm p-2 bg-destructive/10 rounded-md mt-2">
+                {errorMsg}
+              </div>
+            )}
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <Button 
