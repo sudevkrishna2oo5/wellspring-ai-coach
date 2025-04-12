@@ -70,10 +70,12 @@ const App = () => {
           // If goals are empty or full_name is empty, consider the user as new
           setIsNewUser(!profileData?.goals?.length || !profileData?.full_name);
         }
+        
+        setIsLoading(false);
+        setCheckingSession(false);
       } catch (error) {
         console.error("Unexpected error during auth check:", error);
         setIsAuthenticated(false);
-      } finally {
         setIsLoading(false);
         setCheckingSession(false);
       }
@@ -83,14 +85,31 @@ const App = () => {
     
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       console.log("Auth state changed:", event);
-      if (event === 'SIGNED_IN') {
-        setIsAuthenticated(true);
+      setIsAuthenticated(!!session);
+      
+      if (event === 'SIGNED_IN' && session) {
         // Check if the user needs onboarding
-        if (session?.user) {
-          setTimeout(() => {
-            checkNewUserStatus(session.user.id);
-          }, 0);
-        }
+        const checkNewUserStatus = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('full_name, goals')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (error && error.code !== 'PGRST116') {
+              console.error("Error checking new user status:", error);
+              return;
+            }
+            
+            // If goals are empty or full_name is empty, consider the user as new
+            setIsNewUser(!data?.goals?.length || !data?.full_name);
+          } catch (error) {
+            console.error("Error in checkNewUserStatus:", error);
+          }
+        };
+        
+        checkNewUserStatus();
       } else if (event === 'SIGNED_OUT') {
         setIsAuthenticated(false);
         setIsNewUser(false);
@@ -101,25 +120,6 @@ const App = () => {
       authListener.subscription.unsubscribe();
     };
   }, []);
-
-  const checkNewUserStatus = async (userId) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('full_name, goals')
-        .eq('id', userId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error checking new user status:", error);
-        return;
-      }
-      
-      setIsNewUser(!data?.goals?.length || !data?.full_name);
-    } catch (error) {
-      console.error("Error in checkNewUserStatus:", error);
-    }
-  };
 
   if (isLoading) {
     return (
@@ -137,25 +137,36 @@ const App = () => {
             <Toaster />
             <Sonner />
             <Routes>
-              <Route path="/" element={isAuthenticated ? (isNewUser ? <Navigate to="/onboarding" /> : <Index />) : <Navigate to="/auth" />} />
-              <Route path="/auth" element={isAuthenticated ? <Navigate to="/" /> : <Auth />} />
-              <Route path="/workout" element={isAuthenticated ? <Workout /> : <Navigate to="/auth" />} />
-              <Route path="/workout/add" element={isAuthenticated ? <WorkoutAdd /> : <Navigate to="/auth" />} />
-              <Route path="/meals" element={isAuthenticated ? <Meals /> : <Navigate to="/auth" />} />
-              <Route path="/mind" element={isAuthenticated ? <Mind /> : <Navigate to="/auth" />} />
-              <Route path="/progress" element={isAuthenticated ? <Progress /> : <Navigate to="/auth" />} />
-              <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" />} />
-              <Route path="/chat" element={isAuthenticated ? <ChatInterface /> : <Navigate to="/auth" />} />
-              <Route path="/timer" element={isAuthenticated ? <Timer /> : <Navigate to="/auth" />} />
-              <Route path="/steps" element={isAuthenticated ? <StepProgress /> : <Navigate to="/auth" />} />
-              <Route path="/onboarding" element={isAuthenticated ? <Onboarding /> : <Navigate to="/auth" />} />
-              <Route path="/community" element={isAuthenticated ? <Community /> : <Navigate to="/auth" />} />
-              
-              {/* New Routes for Fitness App Features */}
-              <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" />} />
-              <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" />} />
-              <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" />} />
-              
+              <Route 
+                path="/" 
+                element={
+                  isAuthenticated 
+                    ? (isNewUser ? <Navigate to="/onboarding" replace /> : <Index />) 
+                    : <Navigate to="/auth" replace />
+                } 
+              />
+              <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />} />
+              <Route path="/workout" element={isAuthenticated ? <Workout /> : <Navigate to="/auth" replace />} />
+              <Route path="/workout/add" element={isAuthenticated ? <WorkoutAdd /> : <Navigate to="/auth" replace />} />
+              <Route path="/meals" element={isAuthenticated ? <Meals /> : <Navigate to="/auth" replace />} />
+              <Route path="/mind" element={isAuthenticated ? <Mind /> : <Navigate to="/auth" replace />} />
+              <Route path="/progress" element={isAuthenticated ? <Progress /> : <Navigate to="/auth" replace />} />
+              <Route path="/profile" element={isAuthenticated ? <Profile /> : <Navigate to="/auth" replace />} />
+              <Route path="/chat" element={isAuthenticated ? <ChatInterface /> : <Navigate to="/auth" replace />} />
+              <Route path="/timer" element={isAuthenticated ? <Timer /> : <Navigate to="/auth" replace />} />
+              <Route path="/steps" element={isAuthenticated ? <StepProgress /> : <Navigate to="/auth" replace />} />
+              <Route 
+                path="/onboarding" 
+                element={
+                  isAuthenticated 
+                    ? (isNewUser ? <Onboarding /> : <Navigate to="/" replace />) 
+                    : <Navigate to="/auth" replace />
+                } 
+              />
+              <Route path="/community" element={isAuthenticated ? <Community /> : <Navigate to="/auth" replace />} />
+              <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" replace />} />
+              <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" replace />} />
+              <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

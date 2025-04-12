@@ -96,8 +96,10 @@ const Onboarding = () => {
         variant: "default",
       });
       
-      // Navigate to home page
-      navigate('/');
+      // Navigate to home page with a small delay to let the toast be visible
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 500);
       
     } catch (error: any) {
       toast({
@@ -105,7 +107,6 @@ const Onboarding = () => {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };

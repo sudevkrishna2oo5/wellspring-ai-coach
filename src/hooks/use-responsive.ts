@@ -58,7 +58,18 @@ export function useResponsive() {
     isExtraLargeScreen: windowSize.width >= breakpoints.xl,
     is2XLScreen: windowSize.width >= breakpoints['2xl'],
     isBreakpoint,
-    breakpoints
+    breakpoints,
+    
+    // Orientation helpers
+    isPortrait: windowSize.height > windowSize.width,
+    isLandscape: windowSize.width >= windowSize.height,
+    
+    // Screen size categories (more descriptive alternatives)
+    isPhone: windowSize.width < breakpoints.md,
+    isPhablet: windowSize.width >= breakpoints.sm && windowSize.width < breakpoints.md,
+    isTabletDevice: windowSize.width >= breakpoints.md && windowSize.width < breakpoints.lg,
+    isLaptop: windowSize.width >= breakpoints.lg && windowSize.width < breakpoints.xl,
+    isDesktopMonitor: windowSize.width >= breakpoints.xl
   };
 }
 
