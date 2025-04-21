@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Clock, Route, Flame, PlayCircle, PauseCircle, Save, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -52,7 +53,7 @@ const Activity = () => {
       if (!mapRef.current) return;
 
       const mapOptions = {
-        center: { lat: 51.5074, lng: 0.1278 }, // Default to London
+        center: { lat: 51.5074, lng: 0.1278 },
         zoom: 15,
         disableDefaultUI: true,
         zoomControl: true,
@@ -115,17 +116,15 @@ const Activity = () => {
     if (!window.google || !mapInstance.current || !mapLoaded) return;
     
     const service = new window.google.maps.places.PlacesService(mapInstance.current);
-    
     service.nearbySearch(
       {
         location: location,
-        radius: 1500, // meters
-        type: 'gym' // Changed from array to single string
+        radius: 1500,
+        type: 'gym'
       } as google.maps.places.PlaceSearchRequest,
       (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           setNearbyPlaces(results as NearbyPlace[]);
-          
           results.forEach(place => {
             if (place.geometry && place.geometry.location && mapInstance.current) {
               const marker = new window.google.maps.Marker({
@@ -136,11 +135,9 @@ const Activity = () => {
                   url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png'
                 }
               });
-              
               const infoWindow = new window.google.maps.InfoWindow({
                 content: `<div><strong>${place.name}</strong><br>${place.vicinity}</div>`
               });
-              
               marker.addListener('click', () => {
                 infoWindow.open(mapInstance.current, marker);
               });
@@ -160,7 +157,6 @@ const Activity = () => {
       (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
           setNearbyPlaces(prevPlaces => [...prevPlaces, ...(results as NearbyPlace[])]);
-          
           results.forEach(place => {
             if (place.geometry && place.geometry.location && mapInstance.current) {
               const marker = new window.google.maps.Marker({
@@ -171,11 +167,9 @@ const Activity = () => {
                   url: 'https://maps.google.com/mapfiles/ms/icons/green-dot.png'
                 }
               });
-              
               const infoWindow = new window.google.maps.InfoWindow({
                 content: `<div><strong>${place.name}</strong><br>${place.vicinity}</div>`
               });
-              
               marker.addListener('click', () => {
                 infoWindow.open(mapInstance.current, marker);
               });
@@ -207,13 +201,11 @@ const Activity = () => {
     timerRef.current = window.setInterval(() => {
       const newElapsed = Math.floor((Date.now() - startTime) / 1000);
       setElapsed(newElapsed);
-      
       if (distance > 0) {
         const paceMinutes = (newElapsed / 60) / (distance / 1000);
         const paceMin = Math.floor(paceMinutes);
         const paceSec = Math.floor((paceMinutes - paceMin) * 60);
         setPace(`${paceMin}:${paceSec.toString().padStart(2, '0')}`);
-        
         setCalories(Math.round(distance / 1000 * 60));
       }
     }, 1000);
@@ -224,16 +216,12 @@ const Activity = () => {
           lat: position.coords.latitude,
           lng: position.coords.longitude
         };
-        
         setPositions(prev => {
           const newPositions = [...prev, newPos];
-          
           if (routePathRef.current) {
             routePathRef.current.setPath(newPositions);
           }
-          
           mapInstance.current?.setCenter(newPos);
-          
           if (prev.length > 0) {
             const lastPos = prev[prev.length - 1];
             const segmentDistance = calculateDistance(
@@ -242,7 +230,6 @@ const Activity = () => {
             );
             setDistance(d => d + segmentDistance);
           }
-          
           return newPositions;
         });
       },
@@ -278,13 +265,11 @@ const Activity = () => {
   const saveActivity = async () => {
     try {
       pauseTracking();
-      
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session) {
         toast.error('You must be logged in to save activities');
         return;
       }
-      
       const activityData = {
         user_id: session.session.user.id,
         distance: distance,
@@ -295,7 +280,6 @@ const Activity = () => {
         activity_type: 'running',
         created_at: new Date().toISOString()
       };
-      
       toast.success('Activity saved successfully!');
       navigate('/workout');
     } catch (error) {
@@ -312,7 +296,6 @@ const Activity = () => {
     const hrs = Math.floor(seconds / 3600);
     const mins = Math.floor((seconds % 3600) / 60);
     const secs = seconds % 60;
-    
     if (hrs > 0) {
       return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
     }
@@ -320,16 +303,15 @@ const Activity = () => {
   };
 
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    const R = 6371; // Radius of the earth in km
+    const R = 6371;
     const dLat = deg2rad(lat2 - lat1);
     const dLon = deg2rad(lon2 - lon1);
     const a = 
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * 
-      Math.sin(dLon / 2) * Math.sin(dLon / 2)
-    ; 
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-    const distance = R * c * 1000; // Distance in meters
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    const distance = R * c * 1000;
     return distance;
   };
 
