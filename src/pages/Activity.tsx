@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Clock, Route, Flame, PlayCircle, PauseCircle, Save, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -29,6 +28,8 @@ interface NearbyPlace {
     location?: google.maps.LatLng;
   };
 }
+
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY; // Set this in your .env
 
 const Activity = () => {
   const navigate = useNavigate();
@@ -96,7 +97,7 @@ const Activity = () => {
 
     if (!window.google) {
       const script = document.createElement('script');
-      script.src = `https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=places&callback=initMap`;
+      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&callback=initMap`;
       script.async = true;
       script.defer = true;
       document.head.appendChild(script);
@@ -115,7 +116,6 @@ const Activity = () => {
     
     const service = new window.google.maps.places.PlacesService(mapInstance.current);
     
-    // Fix the type property to be a single string, as required by PlaceSearchRequest
     service.nearbySearch(
       {
         location: location,
@@ -150,7 +150,6 @@ const Activity = () => {
       }
     );
 
-    // Add a separate search for parks
     const parkService = new window.google.maps.places.PlacesService(mapInstance.current);
     parkService.nearbySearch(
       {
@@ -160,7 +159,6 @@ const Activity = () => {
       } as google.maps.places.PlaceSearchRequest,
       (results, status) => {
         if (status === window.google.maps.places.PlacesServiceStatus.OK && results) {
-          // Combine with existing places
           setNearbyPlaces(prevPlaces => [...prevPlaces, ...(results as NearbyPlace[])]);
           
           results.forEach(place => {
