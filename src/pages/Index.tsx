@@ -11,7 +11,6 @@ import BottomNavbar from '@/components/BottomNavbar';
 import { motion } from 'framer-motion';
 import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
 import StepsIcon from '@/components/icons/StepsIcon';
-import { ThemePaletteSelector } from "@/components/ThemePaletteSelector";
 
 const Index = () => {
   const [user, setUser] = useState(null);
@@ -73,7 +72,6 @@ const Index = () => {
           FitVibe
         </h1>
         <div className="flex items-center gap-2">
-          <ThemePaletteSelector />
           <ThemeSwitcher />
           {user ? (
             <div className="flex gap-1 md:gap-2">
