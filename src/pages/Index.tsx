@@ -11,7 +11,6 @@ import BottomNavbar from '@/components/BottomNavbar';
 import { motion } from 'framer-motion';
 import WelcomeHeader from '@/components/dashboard/WelcomeHeader';
 import StepsIcon from '@/components/icons/StepsIcon';
-import { ThemePaletteSelector } from "@/components/ThemePaletteSelector";
 
 const Index = () => {
   const [user, setUser] = useState(null);
@@ -73,8 +72,8 @@ const Index = () => {
           FitVibe
         </h1>
         <div className="flex items-center gap-2">
-          <ThemePaletteSelector />
           <ThemeSwitcher />
+          
           {user ? (
             <div className="flex gap-1 md:gap-2">
               {!isMobile && (
@@ -243,7 +242,7 @@ const Dashboard = () => {
       >
         <StatCard 
           title="Today's Workout" 
-          value=""
+          value="Not logged" 
           icon={<Dumbbell className="h-5 w-5 text-violet-500" />}
           onClick={() => navigate('/workout')}
           color="violet"
@@ -251,7 +250,7 @@ const Dashboard = () => {
         
         <StatCard 
           title="Today's Meals" 
-          value=""
+          value="0 kcal" 
           icon={<Utensils className="h-5 w-5 text-indigo-500" />}
           onClick={() => navigate('/meals')}
           color="indigo"
@@ -259,7 +258,7 @@ const Dashboard = () => {
         
         <StatCard 
           title="Sleep Score" 
-          value=""
+          value="No data" 
           icon={<Moon className="h-5 w-5 text-blue-500" />}
           onClick={() => navigate('/mind')}
           color="blue"
@@ -267,7 +266,7 @@ const Dashboard = () => {
         
         <StatCard 
           title="Steps" 
-          value=""
+          value="Track now" 
           icon={<StepsIcon />}
           onClick={() => navigate('/steps')}
           color="teal"
@@ -297,6 +296,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Log your workouts to see progress</p>
                 <Button variant="outline" className="border-violet-500/50 text-violet-500 hover:bg-violet-500/10">
                   Add Workout
                 </Button>
@@ -318,6 +318,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Chat with your AI wellness coach</p>
                 <Button variant="outline" className="border-indigo-500/50 text-indigo-500 hover:bg-indigo-500/10">
                   Start Chat
                 </Button>
@@ -339,6 +340,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Monitor your daily activity and calories burned</p>
                 <Button variant="outline" className="border-teal-500/50 text-teal-500 hover:bg-teal-500/10">
                   View Steps
                 </Button>
@@ -360,6 +362,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Record your meals and track macros</p>
                 <Button variant="outline" className="border-blue-500/50 text-blue-500 hover:bg-blue-500/10">
                   Log Meal
                 </Button>
@@ -381,6 +384,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Create custom interval timers</p>
                 <Button variant="outline" className="border-purple-500/50 text-purple-500 hover:bg-purple-500/10">
                   Set Timer
                 </Button>
@@ -402,6 +406,7 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="flex flex-col items-center justify-center">
+                <p className="text-muted-foreground mb-4">Track metrics to see your progress</p>
                 <Button variant="outline" className="border-indigo-500/50 text-indigo-500 hover:bg-indigo-500/10">
                   View Progress
                 </Button>
