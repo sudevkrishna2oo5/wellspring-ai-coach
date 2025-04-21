@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Bot, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { motion } from 'framer-motion';
 import BottomNavbar from '@/components/BottomNavbar';
 import ChatContainer from '@/components/chat/ChatContainer';
@@ -16,7 +16,6 @@ const ChatInterface = () => {
   const [userSession, setUserSession] = useState<any>(null);
   
   const navigate = useNavigate();
-  const { toast } = useToast();
   
   useEffect(() => {
     const getSession = async () => {
@@ -57,16 +56,9 @@ const ChatInterface = () => {
     try {
       await deleteChatHistoryItem(id);
       setChatHistory(prev => prev.filter(item => item.id !== id));
-      toast({
-        title: "Deleted",
-        description: "Chat history item removed",
-      });
+      toast("Chat history item removed");
     } catch (error: any) {
-      toast({
-        title: "Error",
-        description: "Failed to delete chat history item",
-        variant: "destructive",
-      });
+      toast("Failed to delete chat history item");
     }
   };
 
@@ -102,7 +94,7 @@ const ChatInterface = () => {
             {userSession && (
               <ChatContainer 
                 userId={userSession.user.id} 
-                onChatHistoryUpdated={() => loadChatHistory(userSession.user.id)} 
+                onChatHistoryUpdated={() => userSession && loadChatHistory(userSession.user.id)} 
               />
             )}
           </div>

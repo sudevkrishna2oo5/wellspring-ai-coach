@@ -121,7 +121,7 @@ const ChatContainer = ({ userId, onChatHistoryUpdated }: ChatContainerProps) => 
               message={msg.message}
               response={msg.response}
               isLastMessage={index === messages.length - 1}
-              isLoading={loading}
+              isLoading={loading && index === messages.length - 1}
               errorMessage={index === messages.length - 1 ? errorMessage : null}
               onRetry={retryMessageHandler}
             />
