@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,13 +21,26 @@ const PaymentDemo = () => {
   const [chatMessage, setChatMessage] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { sendNotification } = useNotifications();
 
   useEffect(() => {
-    const fetchExperts = async () => {
+    const fetchUserAndExperts = async () => {
       try {
+        // Get current user
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError) {
+          console.error("Error fetching user:", userError);
+          return;
+        }
+
+        if (userData && userData.user) {
+          setUserId(userData.user.id);
+        }
+        
+        // Fetch experts
         const { data, error } = await supabase
           .from('experts')
           .select('*');
@@ -86,7 +100,7 @@ const PaymentDemo = () => {
       }
     };
 
-    fetchExperts();
+    fetchUserAndExperts();
   }, []);
 
   const handleExpertSelect = (expert) => {
@@ -99,7 +113,16 @@ const PaymentDemo = () => {
     setShowSlotDialog(false);
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    if (!userId) {
+      toast({
+        title: "Authentication required",
+        description: "Please sign in to book a session",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     const options = {
       key: "rzp_test_YOUR_KEY_HERE",
       amount: selectedExpert.hourly_rate * 100,
@@ -111,7 +134,7 @@ const PaymentDemo = () => {
           const { data: payment, error: paymentError } = await supabase
             .from('payments')
             .insert({
-              user_id: supabase.auth.user()?.id,
+              user_id: userId,
               amount: selectedExpert.hourly_rate,
               status: 'completed',
               payment_method: 'razorpay',
@@ -123,12 +146,15 @@ const PaymentDemo = () => {
 
           if (paymentError) throw paymentError;
 
+          // Create a session date string that can be stored in the database
+          const sessionDateStr = new Date(`${selectedSlot.date} ${selectedSlot.time}`).toISOString();
+
           const { data: session, error: sessionError } = await supabase
             .from('expert_sessions')
             .insert({
               expert_id: selectedExpert.id,
-              user_id: supabase.auth.user()?.id,
-              session_date: new Date(selectedSlot.date + ' ' + selectedSlot.time),
+              user_id: userId,
+              session_date: sessionDateStr,
               duration: 30,
               payment_id: payment.id
             })
