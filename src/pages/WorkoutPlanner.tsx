@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ArrowLeft, Calendar, Timer, Clock, Target, Save } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -320,7 +319,7 @@ const WorkoutPlanner = () => {
         </Tabs>
       </main>
 
-      <BottomNavbar />
+      <BottomNavbar currentPage="workout" />
     </div>
   );
 };

@@ -1,10 +1,11 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Activity, BarChart3, CheckCircle2, Flame, ListChecks } from 'lucide-react';
 import BottomNavbar from '@/components/BottomNavbar';
-import NotificationCenter from '@/components/NotificationCenter';
+import { NotificationCenter } from '@/components/NotificationCenter';
 import { supabase } from '@/integrations/supabase/client';
 
 const WelcomeHeader = ({ userName }: { userName: string | null }) => (
