@@ -143,6 +143,95 @@ export type Database = {
         }
         Relationships: []
       }
+      expert_sessions: {
+        Row: {
+          created_at: string | null
+          duration: number
+          expert_id: string
+          id: string
+          meeting_link: string | null
+          payment_id: string | null
+          session_date: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          duration: number
+          expert_id: string
+          id?: string
+          meeting_link?: string | null
+          payment_id?: string | null
+          session_date: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          duration?: number
+          expert_id?: string
+          id?: string
+          meeting_link?: string | null
+          payment_id?: string | null
+          session_date?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "expert_sessions_expert_id_fkey"
+            columns: ["expert_id"]
+            isOneToOne: false
+            referencedRelation: "experts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      experts: {
+        Row: {
+          availability: Json | null
+          bio: string
+          created_at: string | null
+          experience: number
+          full_name: string
+          hourly_rate: number
+          id: string
+          profile_image: string | null
+          specialization: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          availability?: Json | null
+          bio: string
+          created_at?: string | null
+          experience: number
+          full_name: string
+          hourly_rate: number
+          id?: string
+          profile_image?: string | null
+          specialization: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          availability?: Json | null
+          bio?: string
+          created_at?: string | null
+          experience?: number
+          full_name?: string
+          hourly_rate?: number
+          id?: string
+          profile_image?: string | null
+          specialization?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       meals: {
         Row: {
           calories: number | null
@@ -254,6 +343,53 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          currency: string
+          id: string
+          payment_details: Json | null
+          payment_method: string
+          session_id: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          payment_details?: Json | null
+          payment_method: string
+          session_id?: string | null
+          status: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          currency?: string
+          id?: string
+          payment_details?: Json | null
+          payment_method?: string
+          session_id?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "expert_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       posts: {
         Row: {

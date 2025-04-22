@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +21,7 @@ import Community from "./pages/Community";
 import Activity from "./pages/Activity";
 import Streaks from "./pages/Streaks";
 import WorkoutPlanner from "./pages/WorkoutPlanner";
+import PaymentDemo from "./pages/PaymentDemo";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -56,18 +56,16 @@ const App = () => {
         setIsAuthenticated(!!data.session);
         
         if (data.session) {
-          // Check if user has completed onboarding by looking for profile data
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('full_name, goals')
             .eq('id', data.session.user.id)
             .single();
           
-          if (profileError && profileError.code !== 'PGRST116') { // Code for "no rows returned"
+          if (profileError && profileError.code !== 'PGRST116') {
             console.error("Error fetching profile:", profileError);
           }
           
-          // If goals are empty or full_name is empty, consider the user as new
           setIsNewUser(!profileData?.goals?.length || !profileData?.full_name);
         }
         
@@ -88,7 +86,6 @@ const App = () => {
       setIsAuthenticated(!!session);
       
       if (event === 'SIGNED_IN' && session) {
-        // Check if the user needs onboarding
         const checkNewUserStatus = async () => {
           try {
             const { data, error } = await supabase
@@ -102,7 +99,6 @@ const App = () => {
               return;
             }
             
-            // If goals are empty or full_name is empty, consider the user as new
             setIsNewUser(!data?.goals?.length || !data?.full_name);
           } catch (error) {
             console.error("Error in checkNewUserStatus:", error);
@@ -167,6 +163,10 @@ const App = () => {
               <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" replace />} />
               <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" replace />} />
               <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" replace />} />
+              <Route 
+                path="/payment" 
+                element={isAuthenticated ? <PaymentDemo /> : <Navigate to="/auth" replace />} 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
