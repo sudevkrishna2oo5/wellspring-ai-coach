@@ -71,7 +71,9 @@ backend = "postgres"
 [experimental.functions]
 enabled = true
 
-# Configure edge functions
+[functions.chat-assistant]
+verify_jwt = true
+
 [functions.openai-chat]
 verify_jwt = true
 
@@ -80,7 +82,7 @@ verify_jwt = true
 
 [functions.daily-motivation]
 verify_jwt = true
-schedule = "0 8 * * *"  # Run daily at 8:00 AM
+schedule = "0 8 * * *"
 
 [functions.send-notifications]
 verify_jwt = true

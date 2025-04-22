@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,6 +8,7 @@ import BottomNavbar from "@/components/BottomNavbar";
 import { Check, User, Calendar, Clock, DollarSign, CreditCard, MessageCircle, Video, X } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useNotifications, showNotificationToast } from "@/hooks/use-notifications";
 import { useNavigate } from "react-router-dom";
 
 const PaymentDemo = () => {
@@ -22,9 +22,9 @@ const PaymentDemo = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { sendNotification } = useNotifications();
 
   useEffect(() => {
-    // Fetch experts from the database
     const fetchExperts = async () => {
       try {
         const { data, error } = await supabase
@@ -36,11 +36,9 @@ const PaymentDemo = () => {
           return;
         }
         
-        // If no data in development, use mock data
         if (data && data.length > 0) {
           setExperts(data);
         } else {
-          // Mock data for development
           setExperts([
             {
               id: '1',
@@ -103,20 +101,65 @@ const PaymentDemo = () => {
 
   const handlePayment = () => {
     const options = {
-      key: "rzp_test_YOUR_KEY_HERE", // This would be your test key
-      amount: selectedExpert.hourly_rate * 100, // Amount in paise (500 INR)
+      key: "rzp_test_YOUR_KEY_HERE",
+      amount: selectedExpert.hourly_rate * 100,
       currency: "INR",
       name: "FitVibe Consultation",
       description: `Session with ${selectedExpert.full_name}`,
-      handler: (response) => {
-        console.log("Payment successful", response);
-        toast({
-          title: "Payment successful!",
-          description: `Your session with ${selectedExpert.full_name} has been booked. You'll receive a notification when they're ready.`,
-        });
-        
-        // Here we would save the booking to the database
-        saveBooking(response.razorpay_payment_id);
+      handler: async (response) => {
+        try {
+          const { data: payment, error: paymentError } = await supabase
+            .from('payments')
+            .insert({
+              user_id: supabase.auth.user()?.id,
+              amount: selectedExpert.hourly_rate,
+              status: 'completed',
+              payment_method: 'razorpay',
+              payment_details: response,
+              currency: 'INR'
+            })
+            .select()
+            .single();
+
+          if (paymentError) throw paymentError;
+
+          const { data: session, error: sessionError } = await supabase
+            .from('expert_sessions')
+            .insert({
+              expert_id: selectedExpert.id,
+              user_id: supabase.auth.user()?.id,
+              session_date: new Date(selectedSlot.date + ' ' + selectedSlot.time),
+              duration: 30,
+              payment_id: payment.id
+            })
+            .select()
+            .single();
+
+          if (sessionError) throw sessionError;
+
+          toast({
+            title: "Payment successful!",
+            description: `Your session with ${selectedExpert.full_name} has been booked.`,
+          });
+
+          await sendNotification('session_booked', {
+            expertName: selectedExpert.full_name,
+            sessionDate: selectedSlot.date,
+            sessionTime: selectedSlot.time
+          });
+
+          setTimeout(() => {
+            const meetLink = `https://meet.google.com/new`;
+            notifyExpertAvailable(meetLink);
+          }, 5000);
+        } catch (error) {
+          console.error('Error saving session:', error);
+          toast({
+            title: "Error",
+            description: "There was a problem saving your session. Please contact support.",
+            variant: "destructive"
+          });
+        }
       },
       prefill: {
         name: "Demo User",
@@ -132,29 +175,18 @@ const PaymentDemo = () => {
     razorpayWindow.open();
   };
 
-  const saveBooking = async (paymentId) => {
-    // In a real app, this would save to the database
-    console.log("Saving booking with payment ID:", paymentId);
-    
-    // Mock function to simulate expert becoming available after a delay
-    setTimeout(() => {
-      notifyExpertAvailable();
-    }, 5000);
-  };
+  const notifyExpertAvailable = (meetLink) => {
+    showNotificationToast(
+      "Expert is ready!",
+      "Your expert is available now. Click to join the session."
+    );
 
-  const notifyExpertAvailable = () => {
-    toast({
-      title: "Expert is available now!",
-      description: "Click to join the Google Meet session",
-      action: (
-        <Button 
-          onClick={() => window.open("https://meet.google.com/new", "_blank")}
-          className="bg-green-500 hover:bg-green-600"
-        >
-          Join Now
-        </Button>
-      ),
+    sendNotification('expert_ready', {
+      expertName: selectedExpert?.full_name,
+      meetLink
     });
+
+    window.open(meetLink, '_blank');
   };
 
   const toggleChatbot = () => {
@@ -167,27 +199,26 @@ const PaymentDemo = () => {
     
     const userMessage = chatMessage;
     setChatMessage("");
-    
-    // Add user message to chat
     setChatMessages(prev => [...prev, { sender: 'user', text: userMessage }]);
-    
     setIsLoading(true);
     
-    // Simulate AI response
-    setTimeout(() => {
-      let response = "I'm your FitVibe assistant! I can help you book consultations with our experts or answer questions about our services.";
+    try {
+      const { data, error } = await supabase.functions.invoke('chat-assistant', {
+        body: { message: userMessage }
+      });
       
-      if (userMessage.toLowerCase().includes("book") || userMessage.toLowerCase().includes("appointment")) {
-        response = "To book a session, browse our expert profiles above and click 'Book Consultation'. You can then select an available time slot and complete the payment.";
-      } else if (userMessage.toLowerCase().includes("payment") || userMessage.toLowerCase().includes("pay")) {
-        response = "We accept payments via Razorpay. All transactions are secure and you'll receive a confirmation once the payment is processed.";
-      } else if (userMessage.toLowerCase().includes("cancel")) {
-        response = "To cancel a booking, please go to your profile page and select the booking you wish to cancel. Cancellations made 24 hours before the session are eligible for a full refund.";
-      }
+      if (error) throw error;
       
-      setChatMessages(prev => [...prev, { sender: 'bot', text: response }]);
+      setChatMessages(prev => [...prev, { sender: 'bot', text: data.response }]);
+    } catch (error) {
+      console.error('Chat error:', error);
+      setChatMessages(prev => [...prev, { 
+        sender: 'bot', 
+        text: 'Sorry, I encountered an error. Please try again.' 
+      }]);
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -237,7 +268,6 @@ const PaymentDemo = () => {
           ))}
         </div>
 
-        {/* Slot selection dialog */}
         <Dialog open={showSlotDialog} onOpenChange={setShowSlotDialog}>
           <DialogContent>
             <DialogHeader>
@@ -278,7 +308,6 @@ const PaymentDemo = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Payment confirmation card */}
         {selectedExpert && selectedSlot && (
           <Card className="mt-8">
             <CardHeader>
@@ -339,7 +368,6 @@ const PaymentDemo = () => {
         )}
       </div>
 
-      {/* Chatbot floating button and panel */}
       <div className="fixed bottom-20 right-4 z-50">
         {showChatbot ? (
           <div className="bg-white rounded-lg shadow-lg w-80 overflow-hidden border border-gray-200 flex flex-col">
