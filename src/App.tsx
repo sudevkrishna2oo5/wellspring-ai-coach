@@ -22,6 +22,9 @@ import Community from "./pages/Community";
 import Activity from "./pages/Activity";
 import Streaks from "./pages/Streaks";
 import WorkoutPlanner from "./pages/WorkoutPlanner";
+import ProfessionalAdvice from "./pages/ProfessionalAdvice";
+import PaymentPage from "./pages/PaymentPage";
+import FloatingChatbot from "./components/FloatingChatbot";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -167,8 +170,16 @@ const App = () => {
               <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" replace />} />
               <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" replace />} />
               <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" replace />} />
+              
+              {/* New routes for professional advice and payment */}
+              <Route path="/professional-advice" element={isAuthenticated ? <ProfessionalAdvice /> : <Navigate to="/auth" replace />} />
+              <Route path="/payment" element={isAuthenticated ? <PaymentPage /> : <Navigate to="/auth" replace />} />
+              
               <Route path="*" element={<NotFound />} />
             </Routes>
+            
+            {/* Floating chatbot visible on all pages */}
+            <FloatingChatbot />
           </BrowserRouter>
         </TooltipProvider>
       </ThemeProvider>
