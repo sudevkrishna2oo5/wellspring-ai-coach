@@ -22,6 +22,7 @@ import Activity from "./pages/Activity";
 import Streaks from "./pages/Streaks";
 import WorkoutPlanner from "./pages/WorkoutPlanner";
 import PaymentDemo from "./pages/PaymentDemo";
+import ExpertDashboard from "./pages/ExpertDashboard";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -166,6 +167,10 @@ const App = () => {
               <Route 
                 path="/payment" 
                 element={isAuthenticated ? <PaymentDemo /> : <Navigate to="/auth" replace />} 
+              />
+              <Route 
+                path="/expert" 
+                element={isAuthenticated ? <ExpertDashboard /> : <Navigate to="/auth" replace />} 
               />
               <Route path="*" element={<NotFound />} />
             </Routes>

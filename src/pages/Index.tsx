@@ -407,6 +407,54 @@ const Dashboard = () => {
             </CardContent>
           </Card>
         </motion.div>
+        
+        <motion.div 
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+          <Card 
+            className={`gradient-card ${cardClasses} h-full`} 
+            onClick={() => navigate('/expert')}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-violet-500" />
+                Expert Dashboard
+              </CardTitle>
+              <CardDescription>Manage your expert consultations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center">
+                <Button variant="outline" className="border-violet-500/50 text-violet-500 hover:bg-violet-500/10">
+                  View Dashboard
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+        
+        <motion.div 
+          whileHover={{ scale: 1.03 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}
+        >
+          <Card 
+            className={`gradient-card ${cardClasses} h-full`} 
+            onClick={() => navigate('/payment')}
+          >
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageSquare className="h-5 w-5 text-blue-500" />
+                Book Expert
+              </CardTitle>
+              <CardDescription>Schedule expert consultations</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center justify-center">
+                <Button variant="outline" className="border-blue-500/50 text-blue-500 hover:bg-blue-500/10">
+                  Book Now
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
     </div>
   );
