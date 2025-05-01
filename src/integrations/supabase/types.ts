@@ -199,6 +199,8 @@ export type Database = {
           full_name: string
           hourly_rate: number
           id: string
+          is_online: boolean | null
+          last_active: string | null
           profile_image: string | null
           specialization: string
           updated_at: string | null
@@ -212,6 +214,8 @@ export type Database = {
           full_name: string
           hourly_rate: number
           id?: string
+          is_online?: boolean | null
+          last_active?: string | null
           profile_image?: string | null
           specialization: string
           updated_at?: string | null
@@ -225,6 +229,8 @@ export type Database = {
           full_name?: string
           hourly_rate?: number
           id?: string
+          is_online?: boolean | null
+          last_active?: string | null
           profile_image?: string | null
           specialization?: string
           updated_at?: string | null

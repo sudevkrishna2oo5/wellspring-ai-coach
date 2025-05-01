@@ -37,7 +37,8 @@ const ExpertDashboard = () => {
 
         if (expertData) {
           setExpertId(expertData.id);
-          setIsOnline(expertData.is_online);
+          // Now the is_online field exists on the experts table
+          setIsOnline(expertData.is_online || false);
           
           // Fetch expert sessions
           const { data: sessionsData } = await supabase
