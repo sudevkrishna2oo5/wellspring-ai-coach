@@ -144,7 +144,18 @@ const App = () => {
                     : <Navigate to="/auth" replace />
                 } 
               />
-              <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />} />
+              <Route 
+                path="/auth" 
+                element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />} 
+              />
+              <Route 
+                path="/onboarding" 
+                element={
+                  isAuthenticated 
+                    ? (isNewUser ? <Onboarding /> : <Navigate to="/" replace />) 
+                    : <Navigate to="/auth" replace />
+                } 
+              />
               <Route path="/workout" element={isAuthenticated ? <Workout /> : <Navigate to="/auth" replace />} />
               <Route path="/workout/add" element={isAuthenticated ? <WorkoutAdd /> : <Navigate to="/auth" replace />} />
               <Route path="/meals" element={isAuthenticated ? <Meals /> : <Navigate to="/auth" replace />} />
@@ -154,30 +165,13 @@ const App = () => {
               <Route path="/chat" element={isAuthenticated ? <ChatInterface /> : <Navigate to="/auth" replace />} />
               <Route path="/timer" element={isAuthenticated ? <Timer /> : <Navigate to="/auth" replace />} />
               <Route path="/steps" element={isAuthenticated ? <StepProgress /> : <Navigate to="/auth" replace />} />
-              <Route 
-                path="/onboarding" 
-                element={
-                  isAuthenticated 
-                    ? (isNewUser ? <Onboarding /> : <Navigate to="/" replace />) 
-                    : <Navigate to="/auth" replace />
-                } 
-              />
               <Route path="/community" element={isAuthenticated ? <Community /> : <Navigate to="/auth" replace />} />
               <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" replace />} />
               <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" replace />} />
               <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" replace />} />
-              <Route 
-                path="/payment" 
-                element={isAuthenticated ? <PaymentDemo /> : <Navigate to="/auth" replace />} 
-              />
-              <Route 
-                path="/expert" 
-                element={isAuthenticated ? <ExpertDashboard /> : <Navigate to="/auth" replace />} 
-              />
-              <Route 
-                path="/live-trainer" 
-                element={isAuthenticated ? <LiveTrainer /> : <Navigate to="/auth" replace />} 
-              />
+              <Route path="/payment" element={isAuthenticated ? <PaymentDemo /> : <Navigate to="/auth" replace />} />
+              <Route path="/expert" element={isAuthenticated ? <ExpertDashboard /> : <Navigate to="/auth" replace />} />
+              <Route path="/live-trainer" element={isAuthenticated ? <LiveTrainer /> : <Navigate to="/auth" replace />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

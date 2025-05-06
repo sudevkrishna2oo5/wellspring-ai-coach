@@ -138,6 +138,26 @@ const Onboarding = () => {
     }
   };
 
+  const cancelOnboarding = async () => {
+    setLoading(true);
+    try {
+      // Sign out the user and redirect to auth page
+      await supabase.auth.signOut();
+      toast({
+        title: "Signed out",
+        description: "You've been signed out. Please sign in again.",
+      });
+      navigate('/auth', { replace: true });
+    } catch (error: any) {
+      toast({
+        title: "Error signing out",
+        description: error.message,
+        variant: "destructive",
+      });
+      setLoading(false);
+    }
+  };
+
   const nextStep = () => {
     // Validate required fields for each step
     if (step === 1) {
@@ -445,9 +465,13 @@ const Onboarding = () => {
           <div className="flex items-center justify-between mb-2">
             {/* Progress indicator */}
             <div className="text-sm text-muted-foreground">Step {step} of 6</div>
-            {step > 1 && (
+            {step > 1 ? (
               <Button variant="ghost" size="sm" onClick={prevStep}>
                 Back
+              </Button>
+            ) : (
+              <Button variant="ghost" size="sm" onClick={cancelOnboarding}>
+                Cancel
               </Button>
             )}
           </div>
