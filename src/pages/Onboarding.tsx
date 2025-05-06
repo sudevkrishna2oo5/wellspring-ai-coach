@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -132,6 +133,7 @@ const Onboarding = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -152,6 +154,7 @@ const Onboarding = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
       setLoading(false);
     }
   };
@@ -464,11 +467,11 @@ const Onboarding = () => {
             {/* Progress indicator */}
             <div className="text-sm text-muted-foreground">Step {step} of 6</div>
             {step > 1 ? (
-              <Button variant="ghost" size="sm" onClick={prevStep}>
+              <Button variant="ghost" size="sm" onClick={prevStep} disabled={loading}>
                 Back
               </Button>
             ) : (
-              <Button variant="ghost" size="sm" onClick={cancelOnboarding}>
+              <Button variant="ghost" size="sm" onClick={cancelOnboarding} disabled={loading}>
                 Cancel
               </Button>
             )}
@@ -489,6 +492,7 @@ const Onboarding = () => {
             <div className="mt-8">
               <Button 
                 onClick={nextStep} 
+                disabled={loading}
                 className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark"
               >
                 Continue <ArrowRight className="ml-2 h-4 w-4" />

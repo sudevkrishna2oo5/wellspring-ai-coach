@@ -65,6 +65,7 @@ const App = () => {
                   return;
                 }
                 
+                // A user is considered new if they don't have goals or a full name set
                 const newUserStatus = !data?.goals?.length || !data?.full_name;
                 console.log("Is new user:", newUserStatus);
                 setIsNewUser(newUserStatus);
@@ -146,25 +147,31 @@ const App = () => {
               <Route 
                 path="/" 
                 element={
-                  isAuthenticated 
-                    ? (isNewUser ? <Navigate to="/onboarding" replace /> : <Index />) 
-                    : <Navigate to="/auth" replace />
+                  !isAuthenticated ? 
+                    <Navigate to="/auth" replace /> :
+                    isNewUser ? 
+                      <Navigate to="/onboarding" replace /> : 
+                      <Index />
                 } 
               />
               <Route 
                 path="/auth" 
                 element={
-                  isAuthenticated 
-                    ? (isNewUser ? <Navigate to="/onboarding" replace /> : <Navigate to="/" replace />) 
-                    : <Auth />
+                  isAuthenticated ? 
+                    (isNewUser ? 
+                      <Navigate to="/onboarding" replace /> : 
+                      <Navigate to="/" replace />) : 
+                    <Auth />
                 }
               />
               <Route 
                 path="/onboarding" 
                 element={
-                  isAuthenticated 
-                    ? (isNewUser ? <Onboarding /> : <Navigate to="/" replace />) 
-                    : <Navigate to="/auth" replace />
+                  !isAuthenticated ? 
+                    <Navigate to="/auth" replace /> :
+                    isNewUser ? 
+                      <Onboarding /> : 
+                      <Navigate to="/" replace />
                 } 
               />
               

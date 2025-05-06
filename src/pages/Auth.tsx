@@ -32,8 +32,26 @@ const Auth = () => {
       try {
         const { data } = await supabase.auth.getSession();
         if (data.session) {
-          console.log("User already signed in, redirecting to dashboard...");
-          navigate('/', { replace: true });
+          console.log("User already signed in, redirecting...");
+          
+          // Check if user has completed onboarding
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, goals')
+            .eq('id', data.session.user.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error("Error fetching profile:", profileError);
+          }
+          
+          const isNewUser = !profileData?.goals?.length || !profileData?.full_name;
+          
+          if (isNewUser) {
+            navigate('/onboarding', { replace: true });
+          } else {
+            navigate('/', { replace: true });
+          }
         }
       } catch (error) {
         console.error("Error checking session:", error);
@@ -58,7 +76,7 @@ const Auth = () => {
           description: "You've successfully logged in." 
         });
         
-        // Redirect to dashboard or check for new user status
+        // Check if user is new and redirect accordingly
         if (data.session) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
