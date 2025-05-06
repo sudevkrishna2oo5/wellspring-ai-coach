@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -30,7 +29,10 @@ const Auth = () => {
   useEffect(() => {
     const checkSession = async () => {
       const { data } = await supabase.auth.getSession();
-      if (data.session) navigate('/');
+      if (data.session) {
+        console.log("User already signed in, redirecting...");
+        navigate('/');
+      }
     };
     checkSession();
   }, [navigate]);

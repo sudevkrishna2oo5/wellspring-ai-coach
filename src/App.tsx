@@ -24,7 +24,7 @@ import Streaks from "./pages/Streaks";
 import WorkoutPlanner from "./pages/WorkoutPlanner";
 import PaymentDemo from "./pages/PaymentDemo";
 import ExpertDashboard from "./pages/ExpertDashboard";
-import LiveTrainer from "./pages/LiveTrainer"; // Add this line
+import LiveTrainer from "./pages/LiveTrainer";
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
