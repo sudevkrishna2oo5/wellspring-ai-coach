@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,8 +17,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tables } from '@/integrations/supabase/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-type Post = Tables<'posts'> & { user_profile?: { username: string; avatar_url: string; full_name: string } };
-type Comment = Tables<'comments'> & { user_profile?: { username: string; avatar_url: string; full_name: string } };
+// Define clearer types for our posts and comments with explicit profile structure
+interface UserProfile {
+  username: string;
+  avatar_url: string;
+  full_name: string;
+}
+
+type Post = Tables<'posts'> & { user_profile?: UserProfile | null };
+type Comment = Tables<'comments'> & { user_profile?: UserProfile | null };
 
 const Community = () => {
   const navigate = useNavigate();
@@ -59,16 +65,36 @@ const Community = () => {
         return;
       }
 
-      const { data, error } = await supabase
+      // First fetch all posts
+      const { data: postsData, error: postsError } = await supabase
         .from('posts')
-        .select(`
-          *,
-          user_profile:user_id(username, avatar_url, full_name)
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setPosts(data || []);
+      if (postsError) throw postsError;
+      
+      // Process each post to get its author's profile information
+      const postsWithProfiles: Post[] = [];
+      
+      for (const post of postsData || []) {
+        // For each post, get the user profile separately
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username, avatar_url, full_name')
+          .eq('id', post.user_id)
+          .single();
+          
+        postsWithProfiles.push({
+          ...post,
+          user_profile: profileData || {
+            username: 'unknown',
+            avatar_url: null,
+            full_name: 'Unknown User'
+          }
+        });
+      }
+      
+      setPosts(postsWithProfiles);
     } catch (error: any) {
       toast({
         title: "Error fetching posts",
@@ -85,17 +111,37 @@ const Community = () => {
     setCurrentPostId(postId);
     setLoadingComments(true);
     try {
-      const { data, error } = await supabase
+      // First fetch all comments for the post
+      const { data: commentsData, error: commentsError } = await supabase
         .from('comments')
-        .select(`
-          *,
-          user_profile:user_id(username, avatar_url, full_name)
-        `)
+        .select('*')
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
-      if (error) throw error;
-      setComments(data || []);
+      if (commentsError) throw commentsError;
+      
+      // Process each comment to get its author's profile information
+      const commentsWithProfiles: Comment[] = [];
+      
+      for (const comment of commentsData || []) {
+        // For each comment, get the user profile separately
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username, avatar_url, full_name')
+          .eq('id', comment.user_id)
+          .single();
+          
+        commentsWithProfiles.push({
+          ...comment,
+          user_profile: profileData || {
+            username: 'unknown',
+            avatar_url: null,
+            full_name: 'Unknown User'
+          }
+        });
+      }
+      
+      setComments(commentsWithProfiles);
     } catch (error: any) {
       toast({
         title: "Error fetching comments",
@@ -131,14 +177,27 @@ const Community = () => {
           content: newPost.content,
           type: newPost.type,
         }])
-        .select(`
-          *,
-          user_profile:user_id(username, avatar_url, full_name)
-        `);
+        .select();
 
       if (error) throw error;
 
-      setPosts([data[0], ...posts]);
+      // Get user profile for the new post
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, avatar_url, full_name')
+        .eq('id', session.session.user.id)
+        .single();
+      
+      const newPostWithProfile: Post = {
+        ...data[0],
+        user_profile: profileData || {
+          username: 'unknown',
+          avatar_url: null,
+          full_name: 'Unknown User'
+        }
+      };
+
+      setPosts([newPostWithProfile, ...posts]);
       setShowCreatePost(false);
       setNewPost({ content: '', type: 'text' });
       
@@ -179,14 +238,27 @@ const Community = () => {
           post_id: currentPostId,
           content: newComment,
         }])
-        .select(`
-          *,
-          user_profile:user_id(username, avatar_url, full_name)
-        `);
+        .select();
 
       if (error) throw error;
+      
+      // Get user profile for the new comment
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('username, avatar_url, full_name')
+        .eq('id', session.session.user.id)
+        .single();
+      
+      const newCommentWithProfile: Comment = {
+        ...data[0],
+        user_profile: profileData || {
+          username: 'unknown',
+          avatar_url: null,
+          full_name: 'Unknown User'
+        }
+      };
 
-      setComments([...comments, data[0]]);
+      setComments([...comments, newCommentWithProfile]);
       setNewComment('');
       
       toast({
