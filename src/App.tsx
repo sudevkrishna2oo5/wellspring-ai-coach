@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -23,6 +24,7 @@ import Streaks from "./pages/Streaks";
 import WorkoutPlanner from "./pages/WorkoutPlanner";
 import PaymentDemo from "./pages/PaymentDemo";
 import ExpertDashboard from "./pages/ExpertDashboard";
+import LiveTrainer from "./pages/LiveTrainer"; // Add this line
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -171,6 +173,10 @@ const App = () => {
               <Route 
                 path="/expert" 
                 element={isAuthenticated ? <ExpertDashboard /> : <Navigate to="/auth" replace />} 
+              />
+              <Route 
+                path="/live-trainer" 
+                element={isAuthenticated ? <LiveTrainer /> : <Navigate to="/auth" replace />} 
               />
               <Route path="*" element={<NotFound />} />
             </Routes>

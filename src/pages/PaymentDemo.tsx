@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -247,6 +246,10 @@ const PaymentDemo = () => {
     }
   };
 
+  const startLiveTraining = (expert) => {
+    navigate(`/live-trainer?expertId=${expert.id}`);
+  };
+
   return (
     <div className="min-h-screen pb-16">
       <div className="container mx-auto px-4 py-8">
@@ -261,6 +264,11 @@ const PaymentDemo = () => {
                   alt={expert.full_name}
                   className="w-full h-full object-cover"
                 />
+                {expert.is_online && (
+                  <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full">
+                    Online Now
+                  </div>
+                )}
               </div>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -282,12 +290,19 @@ const PaymentDemo = () => {
                   <p className="mt-3 text-muted-foreground line-clamp-2">{expert.bio}</p>
                 </div>
               </CardContent>
-              <CardFooter>
+              <CardFooter className="flex-col space-y-2">
                 <Button 
                   className="w-full"
                   onClick={() => handleExpertSelect(expert)}
                 >
                   Book Consultation
+                </Button>
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => startLiveTraining(expert)}
+                >
+                  Live Training Session
                 </Button>
               </CardFooter>
             </Card>
