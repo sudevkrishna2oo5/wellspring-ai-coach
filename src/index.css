@@ -1,91 +1,203 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
+    /* Light mode colors */
     --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --foreground: 222.2 84% 4.9%;
+
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 222.2 84% 4.9%;
+
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 262.1 83.3% 57.8%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 250 91% 60%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 226 100% 50%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 262 83% 58%;
+    --accent-foreground: 210 40% 98%;
+
     --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 262.1 83.3% 57.8%;
-    --radius: 0.5rem;
-    --violet-light: 250 95% 76.8%;
-    --violet-dark: 263 70% 50.4%;
-    --indigo-light: 230 95% 71.8%;
-    --indigo-dark: 226 70% 55.5%;
-    --violet-DEFAULT: 262.1 83.3% 57.8%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 250 91% 60%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 250 91% 60%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 263.4 70% 50.4%;
-    --primary-foreground: 210 20% 98%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 263.4 70% 50.4%;
-    --violet-light: 250 95% 76.8%;
-    --violet-dark: 263 70% 50.4%;
-    --indigo-light: 230 95% 71.8%;
-    --indigo-dark: 226 70% 55.5%;
-    --violet-DEFAULT: 263.4 70% 50.4%;
-  }
+    /* Dark mode colors - updated for more eye-catching, vibrant look! */
+    --background: 250 25% 10%;   /* deep purple bg */
+    --foreground: 210 95% 98%;   /* white/near white */
 
+    --card: 252 20% 16%;         /* deep indigo card */
+    --card-foreground: 210 97% 98%;
+
+    --popover: 250 16% 18%;
+    --popover-foreground: 210 97% 98%;
+
+    --primary: 267 95% 65%;      /* Vivid purple */
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 212 100% 60%;   /* Bright blue */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 251 20% 23%;        /* Muted indigo */
+    --muted-foreground: 220 20% 65%;
+
+    --accent: 26 98% 55%;        /* Bright orange accent */
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 350 84% 55%;  /* red */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 265 47% 27%;
+    --input: 265 47% 27%;
+    --ring: 267 95% 65%;
+
+    --sidebar-background: 251 20% 16%;
+    --sidebar-foreground: 210 97% 98%;
+    --sidebar-primary: 267 95% 65%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 39 90% 60%;
+    --sidebar-accent-foreground: 210 97% 98%;
+    --sidebar-border: 267 41% 22%;
+    --sidebar-ring: 267 95% 65%;
+  }
+}
+
+@layer base {
   * {
     @apply border-border;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    @apply bg-background text-foreground font-sans transition-colors duration-300;
+    letter-spacing: 0.01em;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-medium tracking-tight;
+  }
+
+  h1 {
+    @apply text-3xl sm:text-4xl font-semibold;
+  }
+
+  h2 {
+    @apply text-2xl sm:text-3xl;
+  }
+
+  h3 {
+    @apply text-xl sm:text-2xl;
+  }
+
+  p {
+    @apply leading-relaxed;
+  }
+
+  /* Transition for smooth mode switching */
+  .transition-theme {
+    @apply transition-colors duration-300;
   }
 }
 
-.gradient-card {
-  @apply relative overflow-hidden;
-  background: linear-gradient(120deg, rgba(var(--violet-dark), 0.03), rgba(var(--indigo-dark), 0.05));
+@layer components {
+  /* Enhanced gradient cards with animations */
+  .gradient-card {
+    @apply bg-gradient-to-br from-violet-light/20 via-transparent to-indigo-light/20 backdrop-blur-sm
+           transition-all duration-300 hover:shadow-lg hover:from-violet-light/30 hover:to-indigo-light/30
+           border border-white/10 dark:border-white/5;
+  }
+
+  /* New vibrant gradients */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-violet-500 to-indigo-500 text-white;
+  }
+  
+  .gradient-secondary {
+    @apply bg-gradient-to-r from-teal-500 to-amber-300 text-white;
+  }
+  
+  .gradient-accent {
+    @apply bg-gradient-to-r from-rose-500 to-amber-500 text-white;
+  }
+
+  /* Progress bar styles */
+  .progress-bar-container {
+    @apply h-2.5 w-full rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden;
+  }
+  
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-500 ease-in-out;
+  }
+
+  /* Stats card with hover effect */
+  .stats-card {
+    @apply rounded-xl p-4 transition-all duration-300 hover:scale-[1.02] hover:shadow-md;
+  }
+
+  /* Animated icon container */
+  .animated-icon {
+    @apply transition-transform duration-300 ease-in-out;
+  }
+  
+  .animated-icon:hover {
+    @apply transform scale-110;
+  }
+
+  /* Button with bounce effect */
+  .button-bounce {
+    @apply transform transition duration-200 ease-in-out active:scale-95;
+  }
+  
+  /* Custom button styles */
+  .btn-primary {
+    @apply px-4 py-2 rounded-lg bg-gradient-to-r from-violet-500 to-indigo-500 text-white font-medium 
+           shadow-md hover:shadow-lg transition-all duration-300 hover:from-violet-600 hover:to-indigo-600;
+  }
+  
+  /* Sleep quality indicator */
+  .sleep-quality-indicator {
+    @apply h-2 rounded-full transition-all;
+  }
+  
+  /* Sleep quality colors */
+  .quality-poor {
+    @apply bg-red-400;
+  }
+  
+  .quality-fair {
+    @apply bg-amber-400;
+  }
+  
+  .quality-good {
+    @apply bg-green-400;
+  }
+  
+  .quality-excellent {
+    @apply bg-indigo-400;
+  }
 }
 
-.pulse-animation {
-  animation: pulse-animation 1.5s infinite;
-}
-
-@keyframes pulse-animation {
-  0% {
-    box-shadow: 0 0 0 0 rgba(var(--primary), 0.7);
-  }
-  70% {
-    box-shadow: 0 0 0 10px rgba(var(--primary), 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(var(--primary), 0);
-  }
-}
+/* Import Google Fonts - deleted as we now import in index.html */
