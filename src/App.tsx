@@ -46,6 +46,41 @@ const App = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        // Set up auth listener first to avoid missing events
+        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+          console.log("Auth state changed:", event);
+          setIsAuthenticated(!!session);
+          
+          if (event === 'SIGNED_IN' && session) {
+            const checkNewUserStatus = async () => {
+              try {
+                const { data, error } = await supabase
+                  .from('profiles')
+                  .select('full_name, goals')
+                  .eq('id', session.user.id)
+                  .single();
+                
+                if (error && error.code !== 'PGRST116') {
+                  console.error("Error checking new user status:", error);
+                  return;
+                }
+                
+                const newUserStatus = !data?.goals?.length || !data?.full_name;
+                console.log("Is new user:", newUserStatus);
+                setIsNewUser(newUserStatus);
+              } catch (error) {
+                console.error("Error in checkNewUserStatus:", error);
+              }
+            };
+            
+            checkNewUserStatus();
+          } else if (event === 'SIGNED_OUT') {
+            setIsAuthenticated(false);
+            setIsNewUser(false);
+          }
+        });
+
+        // Then check current session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -69,11 +104,18 @@ const App = () => {
             console.error("Error fetching profile:", profileError);
           }
           
-          setIsNewUser(!profileData?.goals?.length || !profileData?.full_name);
+          const newUserStatus = !profileData?.goals?.length || !profileData?.full_name;
+          console.log("Initial check - Is new user:", newUserStatus);
+          setIsNewUser(newUserStatus);
         }
         
         setIsLoading(false);
         setCheckingSession(false);
+
+        // Return cleanup function
+        return () => {
+          authListener.subscription.unsubscribe();
+        };
       } catch (error) {
         console.error("Unexpected error during auth check:", error);
         setIsAuthenticated(false);
@@ -83,41 +125,6 @@ const App = () => {
     };
     
     checkAuth();
-    
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log("Auth state changed:", event);
-      setIsAuthenticated(!!session);
-      
-      if (event === 'SIGNED_IN' && session) {
-        const checkNewUserStatus = async () => {
-          try {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('full_name, goals')
-              .eq('id', session.user.id)
-              .single();
-            
-            if (error && error.code !== 'PGRST116') {
-              console.error("Error checking new user status:", error);
-              return;
-            }
-            
-            setIsNewUser(!data?.goals?.length || !data?.full_name);
-          } catch (error) {
-            console.error("Error in checkNewUserStatus:", error);
-          }
-        };
-        
-        checkNewUserStatus();
-      } else if (event === 'SIGNED_OUT') {
-        setIsAuthenticated(false);
-        setIsNewUser(false);
-      }
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
   }, []);
 
   if (isLoading) {
@@ -146,7 +153,11 @@ const App = () => {
               />
               <Route 
                 path="/auth" 
-                element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />} 
+                element={
+                  isAuthenticated 
+                    ? (isNewUser ? <Navigate to="/onboarding" replace /> : <Navigate to="/" replace />) 
+                    : <Auth />
+                }
               />
               <Route 
                 path="/onboarding" 
@@ -156,6 +167,8 @@ const App = () => {
                     : <Navigate to="/auth" replace />
                 } 
               />
+              
+              {/* Protected routes */}
               <Route path="/workout" element={isAuthenticated ? <Workout /> : <Navigate to="/auth" replace />} />
               <Route path="/workout/add" element={isAuthenticated ? <WorkoutAdd /> : <Navigate to="/auth" replace />} />
               <Route path="/meals" element={isAuthenticated ? <Meals /> : <Navigate to="/auth" replace />} />

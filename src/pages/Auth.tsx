@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,12 +29,17 @@ const Auth = () => {
 
   useEffect(() => {
     const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      if (data.session) {
-        console.log("User already signed in, redirecting...");
-        navigate('/');
+      try {
+        const { data } = await supabase.auth.getSession();
+        if (data.session) {
+          console.log("User already signed in, redirecting to dashboard...");
+          navigate('/', { replace: true });
+        }
+      } catch (error) {
+        console.error("Error checking session:", error);
       }
     };
+    
     checkSession();
   }, [navigate]);
 
@@ -43,14 +49,45 @@ const Auth = () => {
     setErrorMsg('');
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { error, data } = await supabase.auth.signInWithPassword({ email, password });
+        
         if (error) throw error;
-        toast({ title: "Success!", description: "You've successfully logged in." });
-        navigate('/');
+        
+        toast({ 
+          title: "Success!", 
+          description: "You've successfully logged in." 
+        });
+        
+        // Redirect to dashboard or check for new user status
+        if (data.session) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('full_name, goals')
+            .eq('id', data.session.user.id)
+            .single();
+          
+          if (profileError && profileError.code !== 'PGRST116') {
+            console.error("Error fetching profile:", profileError);
+          }
+          
+          const isNewUser = !profileData?.goals?.length || !profileData?.full_name;
+          
+          if (isNewUser) {
+            navigate('/onboarding', { replace: true });
+          } else {
+            navigate('/', { replace: true });
+          }
+        } else {
+          navigate('/', { replace: true });
+        }
       } else {
         const { error } = await supabase.auth.signUp({ email, password });
         if (error) throw error;
-        toast({ title: "Success!", description: "Registration successful. Please check your email for confirmation." });
+        toast({ 
+          title: "Success!", 
+          description: "Registration successful. Please check your email for confirmation." 
+        });
+        // Don't automatically redirect after signup - wait for email confirmation
       }
     } catch (error) {
       setErrorMsg(error.message);
@@ -87,10 +124,41 @@ const Auth = () => {
     try {
       const formattedPhone = formatPhoneNumber(phoneNumber);
       console.log("Verifying OTP for phone:", formattedPhone, "OTP:", otp);
-      const { error } = await supabase.auth.verifyOtp({ phone: formattedPhone, token: otp, type: 'sms' });
+      const { error, data } = await supabase.auth.verifyOtp({ 
+        phone: formattedPhone, 
+        token: otp, 
+        type: 'sms' 
+      });
+      
       if (error) throw error;
-      toast({ title: "Success!", description: "Phone verification successful." });
-      navigate('/');
+      
+      toast({ 
+        title: "Success!", 
+        description: "Phone verification successful." 
+      });
+      
+      // Check if user is new
+      if (data.session) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('full_name, goals')
+          .eq('id', data.session.user.id)
+          .single();
+        
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("Error fetching profile:", profileError);
+        }
+        
+        const isNewUser = !profileData?.goals?.length || !profileData?.full_name;
+        
+        if (isNewUser) {
+          navigate('/onboarding', { replace: true });
+        } else {
+          navigate('/', { replace: true });
+        }
+      } else {
+        navigate('/', { replace: true });
+      }
     } catch (error) {
       console.error("Error verifying OTP:", error);
       setErrorMsg(error.message);

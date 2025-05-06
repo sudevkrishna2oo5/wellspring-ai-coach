@@ -98,7 +98,7 @@ const Onboarding = () => {
           description: "Please log in to continue",
           variant: "destructive",
         });
-        navigate('/auth');
+        navigate('/auth', { replace: true });
         return;
       }
       
@@ -123,10 +123,8 @@ const Onboarding = () => {
         variant: "default",
       });
       
-      // Navigate to home page with a small delay to let the toast be visible
-      setTimeout(() => {
-        navigate('/', { replace: true });
-      }, 500);
+      // Navigate to home page after successful update
+      navigate('/', { replace: true });
       
     } catch (error: any) {
       toast({
