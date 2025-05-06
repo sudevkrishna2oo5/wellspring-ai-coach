@@ -24,7 +24,7 @@ import Streaks from "./pages/Streaks";
 import WorkoutPlanner from "./pages/WorkoutPlanner";
 import PaymentDemo from "./pages/PaymentDemo";
 import ExpertDashboard from "./pages/ExpertDashboard";
-import LiveTrainer from "./pages/LiveTrainer";
+import LiveTrainer from "./pages/LiveTrainer"; // Add this line
 import { useEffect, useState } from "react";
 import { supabase } from "./integrations/supabase/client";
 
@@ -46,42 +46,6 @@ const App = () => {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        // Set up auth listener first to avoid missing events
-        const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
-          console.log("Auth state changed:", event);
-          setIsAuthenticated(!!session);
-          
-          if (event === 'SIGNED_IN' && session) {
-            const checkNewUserStatus = async () => {
-              try {
-                const { data, error } = await supabase
-                  .from('profiles')
-                  .select('full_name, goals')
-                  .eq('id', session.user.id)
-                  .single();
-                
-                if (error && error.code !== 'PGRST116') {
-                  console.error("Error checking new user status:", error);
-                  return;
-                }
-                
-                // A user is considered new if they don't have goals or a full name set
-                const newUserStatus = !data?.goals?.length || !data?.full_name;
-                console.log("Is new user:", newUserStatus);
-                setIsNewUser(newUserStatus);
-              } catch (error) {
-                console.error("Error in checkNewUserStatus:", error);
-              }
-            };
-            
-            checkNewUserStatus();
-          } else if (event === 'SIGNED_OUT') {
-            setIsAuthenticated(false);
-            setIsNewUser(false);
-          }
-        });
-
-        // Then check current session
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
@@ -105,18 +69,11 @@ const App = () => {
             console.error("Error fetching profile:", profileError);
           }
           
-          const newUserStatus = !profileData?.goals?.length || !profileData?.full_name;
-          console.log("Initial check - Is new user:", newUserStatus);
-          setIsNewUser(newUserStatus);
+          setIsNewUser(!profileData?.goals?.length || !profileData?.full_name);
         }
         
         setIsLoading(false);
         setCheckingSession(false);
-
-        // Return cleanup function
-        return () => {
-          authListener.subscription.unsubscribe();
-        };
       } catch (error) {
         console.error("Unexpected error during auth check:", error);
         setIsAuthenticated(false);
@@ -126,6 +83,41 @@ const App = () => {
     };
     
     checkAuth();
+    
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log("Auth state changed:", event);
+      setIsAuthenticated(!!session);
+      
+      if (event === 'SIGNED_IN' && session) {
+        const checkNewUserStatus = async () => {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('full_name, goals')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (error && error.code !== 'PGRST116') {
+              console.error("Error checking new user status:", error);
+              return;
+            }
+            
+            setIsNewUser(!data?.goals?.length || !data?.full_name);
+          } catch (error) {
+            console.error("Error in checkNewUserStatus:", error);
+          }
+        };
+        
+        checkNewUserStatus();
+      } else if (event === 'SIGNED_OUT') {
+        setIsAuthenticated(false);
+        setIsNewUser(false);
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
   }, []);
 
   if (isLoading) {
@@ -147,35 +139,12 @@ const App = () => {
               <Route 
                 path="/" 
                 element={
-                  !isAuthenticated ? 
-                    <Navigate to="/auth" replace /> :
-                    isNewUser ? 
-                      <Navigate to="/onboarding" replace /> : 
-                      <Index />
+                  isAuthenticated 
+                    ? (isNewUser ? <Navigate to="/onboarding" replace /> : <Index />) 
+                    : <Navigate to="/auth" replace />
                 } 
               />
-              <Route 
-                path="/auth" 
-                element={
-                  isAuthenticated ? 
-                    (isNewUser ? 
-                      <Navigate to="/onboarding" replace /> : 
-                      <Navigate to="/" replace />) : 
-                    <Auth />
-                }
-              />
-              <Route 
-                path="/onboarding" 
-                element={
-                  !isAuthenticated ? 
-                    <Navigate to="/auth" replace /> :
-                    isNewUser ? 
-                      <Onboarding /> : 
-                      <Navigate to="/" replace />
-                } 
-              />
-              
-              {/* Protected routes */}
+              <Route path="/auth" element={isAuthenticated ? <Navigate to="/" replace /> : <Auth />} />
               <Route path="/workout" element={isAuthenticated ? <Workout /> : <Navigate to="/auth" replace />} />
               <Route path="/workout/add" element={isAuthenticated ? <WorkoutAdd /> : <Navigate to="/auth" replace />} />
               <Route path="/meals" element={isAuthenticated ? <Meals /> : <Navigate to="/auth" replace />} />
@@ -185,13 +154,30 @@ const App = () => {
               <Route path="/chat" element={isAuthenticated ? <ChatInterface /> : <Navigate to="/auth" replace />} />
               <Route path="/timer" element={isAuthenticated ? <Timer /> : <Navigate to="/auth" replace />} />
               <Route path="/steps" element={isAuthenticated ? <StepProgress /> : <Navigate to="/auth" replace />} />
+              <Route 
+                path="/onboarding" 
+                element={
+                  isAuthenticated 
+                    ? (isNewUser ? <Onboarding /> : <Navigate to="/" replace />) 
+                    : <Navigate to="/auth" replace />
+                } 
+              />
               <Route path="/community" element={isAuthenticated ? <Community /> : <Navigate to="/auth" replace />} />
               <Route path="/activity" element={isAuthenticated ? <Activity /> : <Navigate to="/auth" replace />} />
               <Route path="/streaks" element={isAuthenticated ? <Streaks /> : <Navigate to="/auth" replace />} />
               <Route path="/planner" element={isAuthenticated ? <WorkoutPlanner /> : <Navigate to="/auth" replace />} />
-              <Route path="/payment" element={isAuthenticated ? <PaymentDemo /> : <Navigate to="/auth" replace />} />
-              <Route path="/expert" element={isAuthenticated ? <ExpertDashboard /> : <Navigate to="/auth" replace />} />
-              <Route path="/live-trainer" element={isAuthenticated ? <LiveTrainer /> : <Navigate to="/auth" replace />} />
+              <Route 
+                path="/payment" 
+                element={isAuthenticated ? <PaymentDemo /> : <Navigate to="/auth" replace />} 
+              />
+              <Route 
+                path="/expert" 
+                element={isAuthenticated ? <ExpertDashboard /> : <Navigate to="/auth" replace />} 
+              />
+              <Route 
+                path="/live-trainer" 
+                element={isAuthenticated ? <LiveTrainer /> : <Navigate to="/auth" replace />} 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

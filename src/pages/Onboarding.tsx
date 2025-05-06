@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
@@ -15,7 +15,6 @@ const Onboarding = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [checkingAuth, setCheckingAuth] = useState(true);
   
   const [userData, setUserData] = useState({
     fullName: '',
@@ -27,33 +26,6 @@ const Onboarding = () => {
     workoutPreference: 'home', // home or gym
     goals: [] as string[]
   });
-
-  // Check authentication on component mount
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error || !data.session) {
-          console.log("No active session, redirecting to auth page");
-          navigate('/auth', { replace: true });
-          return;
-        }
-        
-        setCheckingAuth(false);
-      } catch (error) {
-        console.error("Error checking authentication:", error);
-        toast({
-          title: "Authentication error",
-          description: "Please log in again",
-          variant: "destructive",
-        });
-        navigate('/auth', { replace: true });
-      }
-    };
-    
-    checkAuth();
-  }, [navigate, toast]);
 
   const experiences = [
     { value: 'beginner', label: 'Beginner (< 1 year)', description: 'New to fitness or just starting your journey' },
@@ -99,7 +71,7 @@ const Onboarding = () => {
           description: "Please log in to continue",
           variant: "destructive",
         });
-        navigate('/auth', { replace: true });
+        navigate('/auth');
         return;
       }
       
@@ -124,8 +96,10 @@ const Onboarding = () => {
         variant: "default",
       });
       
-      // Navigate to home page after successful update
-      navigate('/', { replace: true });
+      // Navigate to home page with a small delay to let the toast be visible
+      setTimeout(() => {
+        navigate('/', { replace: true });
+      }, 500);
       
     } catch (error: any) {
       toast({
@@ -133,28 +107,6 @@ const Onboarding = () => {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const cancelOnboarding = async () => {
-    setLoading(true);
-    try {
-      // Sign out the user and redirect to auth page
-      await supabase.auth.signOut();
-      toast({
-        title: "Signed out",
-        description: "You've been signed out. Please sign in again.",
-      });
-      navigate('/auth', { replace: true });
-    } catch (error: any) {
-      toast({
-        title: "Error signing out",
-        description: error.message,
-        variant: "destructive",
-      });
-    } finally {
       setLoading(false);
     }
   };
@@ -450,15 +402,6 @@ const Onboarding = () => {
     }
   };
 
-  // If still checking auth, show a loading state
-  if (checkingAuth) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="h-8 w-8 rounded-full border-4 border-t-violet-500 border-r-transparent border-b-violet-500 border-l-transparent animate-spin"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-violet-500/5 via-background to-indigo-500/5 flex flex-col">
       <main className="flex-1 p-6 flex flex-col justify-center max-w-md mx-auto w-full">
@@ -466,13 +409,9 @@ const Onboarding = () => {
           <div className="flex items-center justify-between mb-2">
             {/* Progress indicator */}
             <div className="text-sm text-muted-foreground">Step {step} of 6</div>
-            {step > 1 ? (
-              <Button variant="ghost" size="sm" onClick={prevStep} disabled={loading}>
+            {step > 1 && (
+              <Button variant="ghost" size="sm" onClick={prevStep}>
                 Back
-              </Button>
-            ) : (
-              <Button variant="ghost" size="sm" onClick={cancelOnboarding} disabled={loading}>
-                Cancel
               </Button>
             )}
           </div>
@@ -492,7 +431,6 @@ const Onboarding = () => {
             <div className="mt-8">
               <Button 
                 onClick={nextStep} 
-                disabled={loading}
                 className="w-full bg-gradient-to-r from-violet-DEFAULT to-indigo-DEFAULT hover:from-violet-dark hover:to-indigo-dark"
               >
                 Continue <ArrowRight className="ml-2 h-4 w-4" />
