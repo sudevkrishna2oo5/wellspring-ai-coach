@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,8 +17,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Tables } from '@/integrations/supabase/types';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
-type Post = Tables<'posts'> & { user_profile?: { username: string; avatar_url: string; full_name: string } };
-type Comment = Tables<'comments'> & { user_profile?: { username: string; avatar_url: string; full_name: string } };
+// Enhanced types that handle potential Supabase query errors
+type PostUserProfile = {
+  username?: string;
+  avatar_url?: string;
+  full_name?: string;
+};
+
+type Post = Tables<'posts'> & { 
+  user_profile?: PostUserProfile
+};
+
+type CommentUserProfile = {
+  username?: string;
+  avatar_url?: string;
+  full_name?: string;
+};
+
+type Comment = Tables<'comments'> & {
+  user_profile?: CommentUserProfile
+};
 
 const Community = () => {
   const navigate = useNavigate();
@@ -59,16 +76,34 @@ const Community = () => {
         return;
       }
 
+      // Fetch posts with profiles data
       const { data, error } = await supabase
         .from('posts')
         .select(`
           *,
-          user_profile:user_id(username, avatar_url, full_name)
+          user_profile:profiles!user_id(username, avatar_url, full_name)
         `)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPosts(data || []);
+      
+      // Handle the case where user_profile might be an error
+      const safeData = (data || []).map(post => {
+        // If user_profile is an error or undefined, provide a default empty object
+        if (typeof post.user_profile === 'string' || post.user_profile === null) {
+          return {
+            ...post,
+            user_profile: {
+              username: 'Unknown',
+              avatar_url: '',
+              full_name: 'Unknown User'
+            }
+          };
+        }
+        return post;
+      }) as Post[];
+      
+      setPosts(safeData);
     } catch (error: any) {
       toast({
         title: "Error fetching posts",
@@ -89,13 +124,29 @@ const Community = () => {
         .from('comments')
         .select(`
           *,
-          user_profile:user_id(username, avatar_url, full_name)
+          user_profile:profiles!user_id(username, avatar_url, full_name)
         `)
         .eq('post_id', postId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
-      setComments(data || []);
+
+      // Handle the case where user_profile might be an error
+      const safeData = (data || []).map(comment => {
+        if (typeof comment.user_profile === 'string' || comment.user_profile === null) {
+          return {
+            ...comment,
+            user_profile: {
+              username: 'Unknown',
+              avatar_url: '',
+              full_name: 'Unknown User'
+            }
+          };
+        }
+        return comment;
+      }) as Comment[];
+
+      setComments(safeData);
     } catch (error: any) {
       toast({
         title: "Error fetching comments",
@@ -133,12 +184,27 @@ const Community = () => {
         }])
         .select(`
           *,
-          user_profile:user_id(username, avatar_url, full_name)
+          user_profile:profiles!user_id(username, avatar_url, full_name)
         `);
 
       if (error) throw error;
 
-      setPosts([data[0], ...posts]);
+      // Safely handle potentially missing user_profile
+      const newPostWithSafeProfile = data.map(post => {
+        if (typeof post.user_profile === 'string' || post.user_profile === null) {
+          return {
+            ...post,
+            user_profile: {
+              username: 'Unknown',
+              avatar_url: '',
+              full_name: 'Unknown User'
+            }
+          };
+        }
+        return post;
+      })[0] as Post;
+
+      setPosts([newPostWithSafeProfile, ...posts]);
       setShowCreatePost(false);
       setNewPost({ content: '', type: 'text' });
       
@@ -181,12 +247,27 @@ const Community = () => {
         }])
         .select(`
           *,
-          user_profile:user_id(username, avatar_url, full_name)
+          user_profile:profiles!user_id(username, avatar_url, full_name)
         `);
 
       if (error) throw error;
 
-      setComments([...comments, data[0]]);
+      // Safely handle potentially missing user_profile
+      const newCommentWithSafeProfile = data.map(comment => {
+        if (typeof comment.user_profile === 'string' || comment.user_profile === null) {
+          return {
+            ...comment,
+            user_profile: {
+              username: 'Unknown',
+              avatar_url: '',
+              full_name: 'Unknown User'
+            }
+          };
+        }
+        return comment;
+      })[0] as Comment;
+
+      setComments([...comments, newCommentWithSafeProfile]);
       setNewComment('');
       
       toast({

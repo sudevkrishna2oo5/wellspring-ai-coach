@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -353,14 +352,16 @@ const PaymentDemo = () => {
     };
   };
 
-  // Group slots by date for better UI organization
-  const groupedSlots = availableSlots.reduce((groups, slot) => {
-    const { date } = formatSlotTime(slot.slot_time);
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(slot);
-    return groups;
-  }, {});
-
+  // Fix the groupedSlots implementation to handle potential undefined
+  const groupedSlots = availableSlots && Array.isArray(availableSlots) 
+    ? availableSlots.reduce((groups, slot) => {
+        const { date } = formatSlotTime(slot.slot_time);
+        if (!groups[date]) groups[date] = [];
+        groups[date].push(slot);
+        return groups;
+      }, {})
+    : {};
+    
   if (isLoading && !selectedExpert) {
     return (
       <div className="flex items-center justify-center min-h-screen">
