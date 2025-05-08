@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,19 +11,16 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useNotifications, showNotificationToast } from "@/hooks/use-notifications";
 import { useNavigate } from "react-router-dom";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 const PaymentDemo = () => {
   const [experts, setExperts] = useState([]);
   const [selectedExpert, setSelectedExpert] = useState(null);
-  const [availableSlots, setAvailableSlots] = useState([]);
   const [selectedSlot, setSelectedSlot] = useState(null);
   const [showSlotDialog, setShowSlotDialog] = useState(false);
   const [showChatbot, setShowChatbot] = useState(false);
   const [chatMessage, setChatMessage] = useState("");
   const [chatMessages, setChatMessages] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [bookingLoading, setBookingLoading] = useState(false);
   const [userId, setUserId] = useState(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -31,7 +29,6 @@ const PaymentDemo = () => {
   useEffect(() => {
     const fetchUserAndExperts = async () => {
       try {
-        setIsLoading(true);
         // Get current user
         const { data: userData, error: userError } = await supabase.auth.getUser();
         if (userError) {
@@ -43,12 +40,10 @@ const PaymentDemo = () => {
           setUserId(userData.user.id);
         }
         
-        // Fetch experts with availability count
+        // Fetch experts
         const { data, error } = await supabase
           .from('experts')
-          .select('*, expert_slots:expert_slots(count)')
-          .eq('expert_slots.is_booked', false)
-          .order('rate', { ascending: true });
+          .select('*');
         
         if (error) {
           console.error("Error fetching experts:", error);
@@ -58,7 +53,6 @@ const PaymentDemo = () => {
         if (data && data.length > 0) {
           setExperts(data);
         } else {
-          // Fallback to static data if no experts in DB
           setExperts([
             {
               id: '1',
@@ -67,7 +61,6 @@ const PaymentDemo = () => {
               experience: 8,
               bio: 'Certified nutritionist with expertise in weight management and sports nutrition.',
               hourly_rate: 1500,
-              rate: 1500,
               profile_image: 'https://randomuser.me/api/portraits/women/44.jpg',
               availability: JSON.stringify([
                 { date: new Date(Date.now() + 86400000).toISOString().split('T')[0], slots: ['10:00 AM', '2:00 PM'] },
@@ -81,7 +74,6 @@ const PaymentDemo = () => {
               experience: 10,
               bio: 'Elite trainer specializing in strength training and rehabilitation exercises.',
               hourly_rate: 1200,
-              rate: 1200,
               profile_image: 'https://randomuser.me/api/portraits/men/32.jpg',
               availability: JSON.stringify([
                 { date: new Date(Date.now() + 86400000).toISOString().split('T')[0], slots: ['9:00 AM', '5:00 PM'] },
@@ -95,7 +87,6 @@ const PaymentDemo = () => {
               experience: 7,
               bio: 'Experienced yoga instructor with focus on mindfulness and stress management.',
               hourly_rate: 1000,
-              rate: 1000,
               profile_image: 'https://randomuser.me/api/portraits/women/68.jpg',
               availability: JSON.stringify([
                 { date: new Date(Date.now() + 86400000).toISOString().split('T')[0], slots: ['7:00 AM', '6:00 PM'] },
@@ -106,77 +97,19 @@ const PaymentDemo = () => {
         }
       } catch (error) {
         console.error("Unexpected error:", error);
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchUserAndExperts();
   }, []);
 
-  const handleExpertSelect = async (expert) => {
+  const handleExpertSelect = (expert) => {
     setSelectedExpert(expert);
-    setIsLoading(true);
-    
-    try {
-      // Fetch available slots for this expert from the database
-      const { data, error } = await supabase
-        .from('expert_slots')
-        .select('id, slot_time')
-        .eq('expert_id', expert.id)
-        .eq('is_booked', false)
-        .order('slot_time');
-      
-      if (error) {
-        console.error("Error fetching slots:", error);
-        throw error;
-      }
-      
-      if (data && data.length > 0) {
-        setAvailableSlots(data);
-      } else {
-        // Fallback to static data if no slots in DB
-        const mockSlots = [];
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        
-        // Create some mock slots for today
-        for (let hour = 9; hour < 17; hour++) {
-          const slotTime = new Date(today);
-          slotTime.setHours(hour, 0, 0, 0);
-          mockSlots.push({
-            id: `mock-${expert.id}-${hour}`,
-            slot_time: slotTime.toISOString(),
-          });
-        }
-        
-        // Create some mock slots for tomorrow
-        for (let hour = 9; hour < 17; hour++) {
-          const slotTime = new Date(tomorrow);
-          slotTime.setHours(hour, 0, 0, 0);
-          mockSlots.push({
-            id: `mock-${expert.id}-${hour+24}`,
-            slot_time: slotTime.toISOString(),
-          });
-        }
-        
-        setAvailableSlots(mockSlots);
-      }
-    } catch (err) {
-      toast({
-        title: "Error",
-        description: "Could not load available slots. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-      setShowSlotDialog(true);
-    }
+    setShowSlotDialog(true);
   };
 
-  const handleSlotSelect = (slotId, slotTime) => {
-    setSelectedSlot({ id: slotId, time: slotTime });
+  const handleSlotSelect = (date, time) => {
+    setSelectedSlot({ date, time });
     setShowSlotDialog(false);
   };
 
@@ -190,90 +123,82 @@ const PaymentDemo = () => {
       return;
     }
     
-    setBookingLoading(true);
-    
-    try {
-      // Use our database function with concurrency control to book the slot
-      const { data: bookingResult, error: bookingError } = await supabase
-        .rpc('book_expert_slot', {
-          p_expert_id: selectedExpert.id,
-          p_slot_id: selectedSlot.id,
-          p_user_id: userId
-        });
-      
-      if (bookingError) {
-        if (bookingError.message.includes("already booked")) {
+    const options = {
+      key: "rzp_test_YOUR_KEY_HERE",
+      amount: selectedExpert.hourly_rate * 100,
+      currency: "INR",
+      name: "FitVibe Consultation",
+      description: `Session with ${selectedExpert.full_name}`,
+      handler: async (response) => {
+        try {
+          const { data: payment, error: paymentError } = await supabase
+            .from('payments')
+            .insert({
+              user_id: userId,
+              amount: selectedExpert.hourly_rate,
+              status: 'completed',
+              payment_method: 'razorpay',
+              payment_details: response,
+              currency: 'INR'
+            })
+            .select()
+            .single();
+
+          if (paymentError) throw paymentError;
+
+          // Create a session date string that can be stored in the database
+          const sessionDateStr = new Date(`${selectedSlot.date} ${selectedSlot.time}`).toISOString();
+
+          const { data: session, error: sessionError } = await supabase
+            .from('expert_sessions')
+            .insert({
+              expert_id: selectedExpert.id,
+              user_id: userId,
+              session_date: sessionDateStr,
+              duration: 30,
+              payment_id: payment.id
+            })
+            .select()
+            .single();
+
+          if (sessionError) throw sessionError;
+
           toast({
-            title: "Slot no longer available",
-            description: "This time slot has just been booked by someone else. Please select another time slot.",
-            variant: "destructive"
+            title: "Payment successful!",
+            description: `Your session with ${selectedExpert.full_name} has been booked.`,
           });
-          // Reset selection and show slot dialog again
-          setSelectedSlot(null);
-          handleExpertSelect(selectedExpert);
-        } else {
-          console.error('Error processing payment:', bookingError);
+
+          await sendNotification('session_booked', {
+            expertName: selectedExpert.full_name,
+            sessionDate: selectedSlot.date,
+            sessionTime: selectedSlot.time
+          });
+
+          setTimeout(() => {
+            const meetLink = `https://meet.google.com/new`;
+            notifyExpertAvailable(meetLink);
+          }, 5000);
+        } catch (error) {
+          console.error('Error saving session:', error);
           toast({
-            title: "Payment failed",
-            description: "There was an error processing your payment. Please try again.",
+            title: "Error",
+            description: "There was a problem saving your session. Please contact support.",
             variant: "destructive"
           });
         }
-        return;
-      }
+      },
+      prefill: {
+        name: "Demo User",
+        email: "demo@example.com",
+      },
+      theme: {
+        color: "#7C3AED",
+      },
+    };
 
-      // Get session details
-      const paymentId = bookingResult?.[0]?.payment_id;
-      const sessionAmount = bookingResult?.[0]?.amount;
-      
-      // Create a session record
-      const { data: session, error: sessionError } = await supabase
-        .from('expert_sessions')
-        .insert({
-          expert_id: selectedExpert.id,
-          user_id: userId,
-          session_date: new Date(selectedSlot.time).toISOString(),
-          duration: 30,
-          payment_id: paymentId,
-          status: 'confirmed'
-        })
-        .select()
-        .single();
-
-      if (sessionError) {
-        console.error('Error saving session:', sessionError);
-        toast({
-          title: "Warning",
-          description: "Payment was processed but session details couldn't be saved. Our team will contact you.",
-          variant: "destructive"
-        });
-      } else {
-        toast({
-          title: "Payment successful!",
-          description: `Your session with ${selectedExpert.full_name} has been booked.`,
-        });
-
-        await sendNotification('session_booked', {
-          expertName: selectedExpert.full_name,
-          sessionDate: new Date(selectedSlot.time).toLocaleDateString(),
-          sessionTime: new Date(selectedSlot.time).toLocaleTimeString()
-        });
-
-        setTimeout(() => {
-          const meetLink = `https://meet.google.com/new`;
-          notifyExpertAvailable(meetLink);
-        }, 5000);
-      }
-    } catch (error) {
-      console.error('Error in payment process:', error);
-      toast({
-        title: "Error",
-        description: "There was a problem with your payment. Please contact support.",
-        variant: "destructive"
-      });
-    } finally {
-      setBookingLoading(false);
-    }
+    // @ts-ignore
+    const razorpayWindow = new window.Razorpay(options);
+    razorpayWindow.open();
   };
 
   const notifyExpertAvailable = (meetLink) => {
@@ -286,19 +211,6 @@ const PaymentDemo = () => {
       expertName: selectedExpert?.full_name,
       meetLink
     });
-
-    // Update the session with the meeting link
-    if (selectedExpert && selectedSlot) {
-      supabase
-        .from('expert_sessions')
-        .update({ meeting_link: meetLink })
-        .eq('expert_id', selectedExpert.id)
-        .eq('user_id', userId)
-        .eq('status', 'confirmed')
-        .then(({ error }) => {
-          if (error) console.error('Error updating meeting link:', error);
-        });
-    }
 
     window.open(meetLink, '_blank');
   };
@@ -335,41 +247,6 @@ const PaymentDemo = () => {
     }
   };
 
-  // Helper function to format slot times nicely
-  const formatSlotTime = (isoString) => {
-    const date = new Date(isoString);
-    return {
-      date: date.toLocaleDateString('en-US', { 
-        weekday: 'long', 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      }),
-      time: date.toLocaleTimeString('en-US', {
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
-  };
-
-  // Fix the groupedSlots implementation to handle potential undefined
-  const groupedSlots = availableSlots && Array.isArray(availableSlots) 
-    ? availableSlots.reduce((groups, slot) => {
-        const { date } = formatSlotTime(slot.slot_time);
-        if (!groups[date]) groups[date] = [];
-        groups[date].push(slot);
-        return groups;
-      }, {})
-    : {};
-    
-  if (isLoading && !selectedExpert) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen pb-16">
       <div className="container mx-auto px-4 py-8">
@@ -400,7 +277,7 @@ const PaymentDemo = () => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Session Fee:</span>
-                    <span>₹{expert.rate || expert.hourly_rate}</span>
+                    <span>₹{expert.hourly_rate}</span>
                   </div>
                   <p className="mt-3 text-muted-foreground line-clamp-2">{expert.bio}</p>
                 </div>
@@ -418,7 +295,7 @@ const PaymentDemo = () => {
         </div>
 
         <Dialog open={showSlotDialog} onOpenChange={setShowSlotDialog}>
-          <DialogContent className="max-h-[80vh] overflow-y-auto">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle>Select a Time Slot</DialogTitle>
               <DialogDescription>
@@ -426,39 +303,26 @@ const PaymentDemo = () => {
               </DialogDescription>
             </DialogHeader>
             
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent"></div>
-              </div>
-            ) : (
+            {selectedExpert && (
               <div className="space-y-4">
-                {Object.entries(groupedSlots).map(([date, slots], index) => (
+                {JSON.parse(selectedExpert.availability || '[]').map((day, index) => (
                   <div key={index} className="border rounded-md p-4">
-                    <h4 className="font-medium mb-2">{date}</h4>
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                      {slots.map((slot) => {
-                        const { time } = formatSlotTime(slot.slot_time);
-                        return (
-                          <Button
-                            key={slot.id}
-                            variant="outline"
-                            onClick={() => handleSlotSelect(slot.id, slot.slot_time)}
-                            className="justify-start"
-                          >
-                            <Clock className="mr-2 h-4 w-4" />
-                            {time}
-                          </Button>
-                        );
-                      })}
+                    <h4 className="font-medium mb-2">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</h4>
+                    <div className="grid grid-cols-2 gap-2">
+                      {day.slots.map((slot, slotIndex) => (
+                        <Button
+                          key={slotIndex}
+                          variant="outline"
+                          onClick={() => handleSlotSelect(day.date, slot)}
+                          className="justify-start"
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          {slot}
+                        </Button>
+                      ))}
                     </div>
                   </div>
                 ))}
-                {Object.keys(groupedSlots).length === 0 && (
-                  <div className="text-center py-8">
-                    <Calendar className="h-12 w-12 mx-auto text-muted-foreground opacity-50 mb-2" />
-                    <p className="text-muted-foreground">No available slots found</p>
-                  </div>
-                )}
               </div>
             )}
             
@@ -477,19 +341,6 @@ const PaymentDemo = () => {
               <CardDescription>Review your consultation details</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4 mb-6">
-                <Avatar className="h-16 w-16 border">
-                  {selectedExpert.profile_image ? (
-                    <AvatarImage src={selectedExpert.profile_image} alt={selectedExpert.full_name} />
-                  ) : (
-                    <AvatarFallback>{selectedExpert.full_name.charAt(0)}</AvatarFallback>
-                  )}
-                </Avatar>
-                <div>
-                  <h3 className="text-lg font-medium">{selectedExpert.full_name}</h3>
-                  <p className="text-muted-foreground">{selectedExpert.specialization}</p>
-                </div>
-              </div>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -499,14 +350,23 @@ const PaymentDemo = () => {
                 </TableHeader>
                 <TableBody>
                   <TableRow>
+                    <TableCell>Expert</TableCell>
+                    <TableCell>{selectedExpert.full_name}</TableCell>
+                  </TableRow>
+                  <TableRow>
                     <TableCell>Date</TableCell>
                     <TableCell>
-                      {formatSlotTime(selectedSlot.time).date}
+                      {new Date(selectedSlot.date).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
                     </TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Time</TableCell>
-                    <TableCell>{formatSlotTime(selectedSlot.time).time}</TableCell>
+                    <TableCell>{selectedSlot.time}</TableCell>
                   </TableRow>
                   <TableRow>
                     <TableCell>Duration</TableCell>
@@ -514,7 +374,7 @@ const PaymentDemo = () => {
                   </TableRow>
                   <TableRow>
                     <TableCell className="font-bold">Amount</TableCell>
-                    <TableCell className="font-bold">₹{selectedExpert.rate || selectedExpert.hourly_rate}</TableCell>
+                    <TableCell className="font-bold">₹{selectedExpert.hourly_rate}</TableCell>
                   </TableRow>
                 </TableBody>
               </Table>
@@ -524,19 +384,9 @@ const PaymentDemo = () => {
                 <Button 
                   className="w-full"
                   onClick={handlePayment}
-                  disabled={bookingLoading}
                 >
-                  {bookingLoading ? (
-                    <>
-                      <div className="h-4 w-4 mr-2 animate-spin rounded-full border-2 border-background border-t-transparent"></div>
-                      Processing...
-                    </>
-                  ) : (
-                    <>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Pay Now
-                    </>
-                  )}
+                  <CreditCard className="mr-2 h-4 w-4" />
+                  Pay Now
                 </Button>
               </div>
             </CardFooter>

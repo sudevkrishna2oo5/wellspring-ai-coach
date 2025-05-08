@@ -9,24 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      ai_recommendation: {
-        Row: {
-          confidence_score: number
-          id: number
-          recommendation: string
-        }
-        Insert: {
-          confidence_score: number
-          id?: never
-          recommendation: string
-        }
-        Update: {
-          confidence_score?: number
-          id?: never
-          recommendation?: string
-        }
-        Relationships: []
-      }
       app_preferences: {
         Row: {
           created_at: string
@@ -57,54 +39,6 @@ export type Database = {
         }
         Relationships: []
       }
-      biometrics: {
-        Row: {
-          created_at: string
-          heart_rate: number | null
-          id: number
-          steps: number | null
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          heart_rate?: number | null
-          id?: never
-          steps?: number | null
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          heart_rate?: number | null
-          id?: never
-          steps?: number | null
-          user_id?: string
-        }
-        Relationships: []
-      }
-      body_fat_audit: {
-        Row: {
-          audit_id: number
-          changed_at: string | null
-          new_body_fat: number | null
-          old_body_fat: number | null
-          user_id: string | null
-        }
-        Insert: {
-          audit_id?: never
-          changed_at?: string | null
-          new_body_fat?: number | null
-          old_body_fat?: number | null
-          user_id?: string | null
-        }
-        Update: {
-          audit_id?: never
-          changed_at?: string | null
-          new_body_fat?: number | null
-          old_body_fat?: number | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
       chatbot_history: {
         Row: {
           created_at: string
@@ -130,7 +64,15 @@ export type Database = {
           response?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "chatbot_history_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       comments: {
         Row: {
@@ -160,6 +102,13 @@ export type Database = {
             columns: ["post_id"]
             isOneToOne: false
             referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -241,35 +190,6 @@ export type Database = {
           },
         ]
       }
-      expert_slots: {
-        Row: {
-          expert_id: string
-          id: string
-          is_booked: boolean
-          slot_time: string
-        }
-        Insert: {
-          expert_id: string
-          id?: string
-          is_booked?: boolean
-          slot_time: string
-        }
-        Update: {
-          expert_id?: string
-          id?: string
-          is_booked?: boolean
-          slot_time?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "expert_slots_expert_id_fkey"
-            columns: ["expert_id"]
-            isOneToOne: false
-            referencedRelation: "experts"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       experts: {
         Row: {
           availability: Json | null
@@ -318,30 +238,6 @@ export type Database = {
         }
         Relationships: []
       }
-      feedback: {
-        Row: {
-          comment: string | null
-          created_at: string
-          id: string
-          rating: number
-          user_id: string
-        }
-        Insert: {
-          comment?: string | null
-          created_at?: string
-          id?: string
-          rating: number
-          user_id: string
-        }
-        Update: {
-          comment?: string | null
-          created_at?: string
-          id?: string
-          rating?: number
-          user_id?: string
-        }
-        Relationships: []
-      }
       meals: {
         Row: {
           calories: number | null
@@ -376,7 +272,15 @@ export type Database = {
           protein?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       meditation: {
         Row: {
@@ -403,7 +307,15 @@ export type Database = {
           type?: string | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "meditation_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -513,7 +425,15 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -573,7 +493,15 @@ export type Database = {
           user_id?: string
           weight?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "progress_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       security_settings: {
         Row: {
@@ -627,7 +555,15 @@ export type Database = {
           quality_rating?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sleep_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workouts: {
         Row: {
@@ -660,63 +596,22 @@ export type Database = {
           type?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "workouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
-      avg_calories_per_meal_type: {
-        Row: {
-          avg_calories: number | null
-          meal_type: string | null
-        }
-        Relationships: []
-      }
-      last_workout_date: {
-        Row: {
-          last_workout: string | null
-          user_id: string | null
-        }
-        Relationships: []
-      }
-      progress_over_time: {
-        Row: {
-          body_fat_percentage: number | null
-          date: string | null
-          user_id: string | null
-          weight: number | null
-        }
-        Insert: {
-          body_fat_percentage?: number | null
-          date?: string | null
-          user_id?: string | null
-          weight?: number | null
-        }
-        Update: {
-          body_fat_percentage?: number | null
-          date?: string | null
-          user_id?: string | null
-          weight?: number | null
-        }
-        Relationships: []
-      }
-      weekly_workout_summary: {
-        Row: {
-          total_minutes: number | null
-          user_id: string | null
-          workout_count: number | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
-      book_expert_slot: {
-        Args: { p_expert_id: string; p_slot_id: string; p_user_id: string }
-        Returns: {
-          payment_id: string
-          amount: number
-          status: string
-        }[]
-      }
+      [_ in never]: never
     }
     Enums: {
       [_ in never]: never
